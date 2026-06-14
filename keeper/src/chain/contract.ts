@@ -140,7 +140,7 @@ export async function readLiquidationFlagged(
 export function buildTakeEscrow(tx: Transaction, positionId: string): TransactionObjectArgument {
   const pkg = requireMarginPredictPackage();
   return tx.moveCall({
-    target: `${pkg}::position_manager::take_escrow`,
+    target: `${pkg}::position_executor::take_escrow`,
     typeArguments: [DUSDC_TYPE],
     arguments: [tx.object(positionId), tx.object(requirePredictManagerId())],
   });
@@ -157,7 +157,7 @@ export function buildDeployPosition(
 ): void {
   const pkg = requireMarginPredictPackage();
   tx.moveCall({
-    target: `${pkg}::position_manager::deploy_position`,
+    target: `${pkg}::position_executor::deploy_position`,
     typeArguments: [DUSDC_TYPE],
     arguments: [
       tx.object(positionId),
@@ -180,7 +180,7 @@ export function buildClosePosition(
 ): TransactionObjectArgument {
   const pkg = requireMarginPredictPackage();
   return tx.moveCall({
-    target: `${pkg}::position_manager::execute_close`,
+    target: `${pkg}::position_executor::execute_close`,
     typeArguments: [DUSDC_TYPE],
     arguments: [
       tx.object(positionId),
@@ -200,7 +200,7 @@ export function buildSettlePosition(
 ): TransactionObjectArgument {
   const pkg = requireMarginPredictPackage();
   return tx.moveCall({
-    target: `${pkg}::position_manager::execute_settle`,
+    target: `${pkg}::position_executor::execute_settle`,
     typeArguments: [DUSDC_TYPE],
     arguments: [
       tx.object(positionId),
@@ -216,7 +216,7 @@ export function buildSettlePosition(
 export function buildFlagLiquidation(tx: Transaction, positionId: string, oracleId: string): void {
   const pkg = requireMarginPredictPackage();
   tx.moveCall({
-    target: `${pkg}::position_manager::flag_for_liquidation`,
+    target: `${pkg}::position_liquidator::flag_for_liquidation`,
     typeArguments: [DUSDC_TYPE],
     arguments: [
       tx.object(positionId),
@@ -235,7 +235,7 @@ export function buildExecuteLiquidation(
 ): TransactionObjectArgument {
   const pkg = requireMarginPredictPackage();
   return tx.moveCall({
-    target: `${pkg}::position_manager::execute_liquidation`,
+    target: `${pkg}::position_liquidator::execute_liquidation`,
     typeArguments: [DUSDC_TYPE],
     arguments: [
       tx.object(positionId),
