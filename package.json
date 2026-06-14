@@ -1,0 +1,6 @@
+{
+  "name": "margin-predict",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": ["keeper"]
+}

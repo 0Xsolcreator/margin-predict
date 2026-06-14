@@ -1,0 +1,21 @@
+{
+  "name": "@margin-predict/keeper",
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "tsx src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "@mysten/deepbook-v3": "latest",
+    "@mysten/sui": "latest",
+    "dotenv": "^16.4.0",
+    "fastify": "^5.2.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0"
+  }
+}
