@@ -9,7 +9,6 @@ use sui::coin::{Self, Coin};
 use sui::sui::SUI;
 use sui::clock::Clock;
 use deepbook_predict::predict_manager::PredictManager;
-use margin_predict::constants;
 use margin_predict::types::{Self, Intent, PositionSnapshot, LiquidationFlag};
 
 // === Errors ===

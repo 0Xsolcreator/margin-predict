@@ -3,19 +3,23 @@
 module margin_predict::position_executor;
 
 use sui::coin::{Self, Coin};
+use sui::sui::SUI;
 use sui::clock::Clock;
 use deepbook_predict::predict::{Self, Predict};
 use deepbook_predict::predict_manager::{Self, PredictManager};
 use deepbook_predict::oracle::OracleSVI;
 use deepbook_predict::market_key::MarketKey;
-use margin_predict::constants;
 use margin_predict::types;
 use margin_predict::margin_position::{Self, MarginPosition};
 
 // === Errors ===
-const EZeroAmount: u64      = 0;
-const EWrongStatus: u64     = 1;
+const EZeroAmount: u64       = 0;
+const EWrongStatus: u64      = 1;
 const EOracleNotSettled: u64 = 2;
+
+// === Constants ===
+const PROBE_QUANTITY: u64    = 1_000_000; // $1 notional (6-decimal DUSDC)
+const SIZING_ITERATIONS: u64 = 4;
 
 // === Open: step 1 ===
 
@@ -151,11 +155,11 @@ fun size_position(
     budget: u64,
     clock: &Clock,
 ): u64 {
-    let (probe_cost, _) = predict::get_trade_amounts(predict, oracle, key, constants::PROBE_QUANTITY, clock);
+    let (probe_cost, _) = predict::get_trade_amounts(predict, oracle, key, PROBE_QUANTITY, clock);
     assert!(probe_cost > 0, EZeroAmount);
-    let mut quantity = (((budget as u128) * (constants::PROBE_QUANTITY as u128) / (probe_cost as u128)) as u64);
+    let mut quantity = (((budget as u128) * (PROBE_QUANTITY as u128) / (probe_cost as u128)) as u64);
     let mut i = 0;
-    while (i < constants::SIZING_ITERATIONS) {
+    while (i < SIZING_ITERATIONS) {
         let (cost, _) = predict::get_trade_amounts(predict, oracle, key, quantity, clock);
         if (cost <= budget || cost == 0) { break };
         quantity = (((quantity as u128) * (budget as u128) / (cost as u128)) as u64);
