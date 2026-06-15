@@ -19,6 +19,7 @@ const ENoPendingIntent: u64  = 3;
 const EWrongIntentKind: u64  = 4;
 const ETimeoutNotElapsed: u64 = 5;
 const EAlreadyFlagged: u64   = 6;
+const ENotKeeper: u64        = 7;
 
 // === Lifecycle statuses ===
 const STATUS_PENDING_OPEN: u8 = 0;
@@ -100,8 +101,8 @@ public(package) fun assert_owner<T>(pos: &MarginPosition<T>, sender: address) {
 /// Verifies that the caller is the owner of the given `PredictManager` and
 /// that it matches the one recorded in this position.
 public(package) fun assert_keeper<T>(pos: &MarginPosition<T>, manager: &PredictManager, ctx: &TxContext) {
-    assert!(object::id(manager) == pos.predict_manager_id, EWrongStatus);
-    assert!(manager.owner() == ctx.sender(), EWrongStatus);
+    assert!(object::id(manager) == pos.predict_manager_id, ENotKeeper);
+    assert!(manager.owner() == ctx.sender(), ENotKeeper);
 }
 
 // === Owner-side mutations ===
