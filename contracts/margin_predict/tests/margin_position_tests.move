@@ -64,6 +64,7 @@ fun open_then_close_lifecycle() {
     let escrow = margin_position::take_escrow(&mut pos);
     assert!(escrow.value() == 1_000_000);
     destroy(escrow);
+    assert!(margin_position::collateral_sui(&pos) == 1_000_000);
 
     let snapshot = types::new_snapshot(dummy_market_key(), 5_000_000, 12_000, clock.timestamp_ms());
     margin_position::confirm_open(&mut pos, snapshot, object::id_from_address(@0xE1), 200_000);
@@ -82,6 +83,7 @@ fun open_then_close_lifecycle() {
     assert!(margin_position::position(&pos).is_none());
     assert!(margin_position::margin_debt(&pos) == 0);
     assert!(margin_position::margin_manager_id(&pos).is_none());
+    assert!(margin_position::collateral_sui(&pos) == 0);
 
     destroy(pos);
     clock.destroy_for_testing();
@@ -261,6 +263,7 @@ fun confirm_settle_clears_open_position() {
     assert!(margin_position::position(&pos).is_none());
     assert!(margin_position::margin_debt(&pos) == 0);
     assert!(margin_position::margin_manager_id(&pos).is_none());
+    assert!(margin_position::collateral_sui(&pos) == 0);
 
     destroy(pos);
     clock.destroy_for_testing();
@@ -330,6 +333,7 @@ fun soft_then_hard_liquidation() {
     destroy(escrow);
     let snapshot = types::new_snapshot(dummy_market_key(), 5_000_000, 12_000, clock.timestamp_ms());
     margin_position::confirm_open(&mut pos, snapshot, object::id_from_address(@0xE1), 200_000);
+    assert!(margin_position::collateral_sui(&pos) == 1_000_000);
 
     margin_position::set_liquidation_flag(&mut pos, @0xD1, types::liq_soft(), &clock);
     assert!(margin_position::liquidation_flag(&pos).is_some());
@@ -341,6 +345,8 @@ fun soft_then_hard_liquidation() {
     let snap = margin_position::position(&pos).borrow();
     assert!(types::snapshot_quantity(snap) == 3_750_000);
     assert!(types::snapshot_market_key(snap) == dummy_market_key());
+    // Soft liquidation only resizes the position/debt; collateral stays locked.
+    assert!(margin_position::collateral_sui(&pos) == 1_000_000);
 
     margin_position::set_liquidation_flag(&mut pos, @0xD2, types::liq_hard(), &clock);
     margin_position::apply_hard_liquidation(&mut pos);
@@ -349,6 +355,7 @@ fun soft_then_hard_liquidation() {
     assert!(margin_position::margin_debt(&pos) == 0);
     assert!(margin_position::margin_manager_id(&pos).is_none());
     assert!(margin_position::liquidation_flag(&pos).is_none());
+    assert!(margin_position::collateral_sui(&pos) == 0);
 
     destroy(pos);
     clock.destroy_for_testing();

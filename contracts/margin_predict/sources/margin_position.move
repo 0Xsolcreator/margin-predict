@@ -36,6 +36,11 @@ public struct MarginPosition<phantom T> has key {
     /// SUI escrowed at `request_open`, transferred to DeepBook Margin on open.
     escrow: Balance<SUI>,
     pending_intent: Option<Intent>,
+    /// SUI deposited into the DeepBook Margin `MarginManager` as collateral for
+    /// this position (set when the keeper withdraws `escrow`). Zeroed when the
+    /// collateral is withdrawn back to the owner on close / settle / hard
+    /// liquidation; unaffected by soft liquidation.
+    collateral_sui: u64,
     /// DeepBook Margin `MarginManager` whose DBUSDC borrow funds this position.
     margin_manager_id: Option<ID>,
     /// DBUSDC principal borrowed (6 decimals). Reduced on soft liquidation,
@@ -63,6 +68,7 @@ public(package) fun new<T>(
         status: STATUS_PENDING_OPEN,
         escrow: payment.into_balance(),
         pending_intent: option::some(types::new_open_intent(leverage_bps, market_key, clock.timestamp_ms())),
+        collateral_sui: 0,
         margin_manager_id: option::none(),
         margin_debt: 0,
         position: option::none(),
@@ -78,6 +84,7 @@ public fun owner<T>(pos: &MarginPosition<T>): address    { pos.owner }
 public fun predict_manager_id<T>(pos: &MarginPosition<T>): ID { pos.predict_manager_id }
 public fun status<T>(pos: &MarginPosition<T>): u8        { pos.status }
 public fun escrow_value<T>(pos: &MarginPosition<T>): u64 { pos.escrow.value() }
+public fun collateral_sui<T>(pos: &MarginPosition<T>): u64 { pos.collateral_sui }
 public fun margin_manager_id<T>(pos: &MarginPosition<T>): Option<ID> { pos.margin_manager_id }
 public fun margin_debt<T>(pos: &MarginPosition<T>): u64  { pos.margin_debt }
 public fun pending_intent<T>(pos: &MarginPosition<T>): &Option<Intent> { &pos.pending_intent }
@@ -138,7 +145,9 @@ public(package) fun cancel_intent<T>(
 
 public(package) fun take_escrow<T>(pos: &mut MarginPosition<T>): Balance<SUI> {
     assert!(pos.pending_intent.is_some(), ENoPendingIntent);
-    pos.escrow.withdraw_all()
+    let bal = pos.escrow.withdraw_all();
+    pos.collateral_sui = bal.value();
+    bal
 }
 
 public(package) fun confirm_open<T>(
@@ -162,6 +171,7 @@ public(package) fun confirm_close<T>(pos: &mut MarginPosition<T>) {
     pos.position = option::none();
     pos.margin_manager_id = option::none();
     pos.margin_debt = 0;
+    pos.collateral_sui = 0;
     pos.status = STATUS_CLOSED;
     pos.pending_intent = option::none();
 }
@@ -172,6 +182,7 @@ public(package) fun confirm_settle<T>(pos: &mut MarginPosition<T>) {
     pos.position = option::none();
     pos.margin_manager_id = option::none();
     pos.margin_debt = 0;
+    pos.collateral_sui = 0;
     pos.status = STATUS_CLOSED;
     pos.pending_intent = option::none();
 }
@@ -212,6 +223,7 @@ public(package) fun apply_hard_liquidation<T>(pos: &mut MarginPosition<T>) {
     pos.position = option::none();
     pos.margin_manager_id = option::none();
     pos.margin_debt = 0;
+    pos.collateral_sui = 0;
     pos.status = STATUS_LIQUIDATED;
     pos.pending_intent = option::none();
     pos.liquidation_flag = option::none();

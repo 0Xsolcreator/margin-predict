@@ -55,7 +55,7 @@ fun deploy(
         oracle,
         collateral,
         object::id_from_address(@0xCAFE),
-        100_000,
+        10_000_000,
         clock,
         scenario.ctx(),
     );
@@ -87,6 +87,7 @@ fun take_escrow_returns_escrow_and_clears_it() {
     let escrow_coin = position_executor::take_escrow(&mut pos, &manager, scenario.ctx());
     assert!(escrow_coin.value() == 1_000_000);
     assert!(margin_position::escrow_value(&pos) == 0);
+    assert!(margin_position::collateral_sui(&pos) == 1_000_000);
 
     destroy(escrow_coin);
     test_scenario::return_shared(pos);
@@ -146,7 +147,8 @@ fun deploy_position_opens_position() {
     let pos = deploy(&mut scenario, &mut predict, &mut manager, &oracle, &clock, market_key);
 
     assert!(margin_position::status(&pos) == margin_position::status_open());
-    assert!(margin_position::margin_debt(&pos) == 100_000);
+    assert!(margin_position::margin_debt(&pos) == 10_000_000);
+    assert!(margin_position::collateral_sui(&pos) == 1_000_000);
     assert!(margin_position::margin_manager_id(&pos) == option::some(object::id_from_address(@0xCAFE)));
     assert!(margin_position::pending_intent(&pos).is_none());
 
@@ -187,6 +189,84 @@ fun deploy_position_not_keeper_fails() {
         collateral,
         object::id_from_address(@0xCAFE),
         100_000,
+        &clock,
+        scenario.ctx(),
+    );
+
+    test_scenario::return_shared(pos);
+    predict_fixture::teardown(predict, oracle, cap, manager, clock, scenario);
+}
+
+#[test, expected_failure(abort_code = 3)] // EInvalidMarginDebt
+fun deploy_position_margin_debt_too_low_fails() {
+    let mut scenario = test_scenario::begin(KEEPER);
+    let (mut predict, oracle, cap, mut manager, clock, market_key) =
+        predict_fixture::setup(&mut scenario, KEEPER, 100_000_000_000);
+
+    scenario.next_tx(OWNER);
+    position_manager::request_open<TEST_QUOTE>(
+        object::id(&manager),
+        12_000,
+        market_key,
+        coin::mint_for_testing<SUI>(1_000_000, scenario.ctx()),
+        &clock,
+        scenario.ctx(),
+    );
+
+    scenario.next_tx(KEEPER);
+    let mut pos = scenario.take_shared<MarginPosition<TEST_QUOTE>>();
+    let escrow_coin = position_executor::take_escrow(&mut pos, &manager, scenario.ctx());
+    destroy(escrow_coin);
+
+    // < 90% of the 10_000_000 collateral, outside DEBT_TOLERANCE_BPS.
+    let collateral = coin::mint_for_testing<TEST_QUOTE>(10_000_000, scenario.ctx());
+    position_executor::deploy_position<TEST_QUOTE>(
+        &mut pos,
+        &mut predict,
+        &mut manager,
+        &oracle,
+        collateral,
+        object::id_from_address(@0xCAFE),
+        8_000_000,
+        &clock,
+        scenario.ctx(),
+    );
+
+    test_scenario::return_shared(pos);
+    predict_fixture::teardown(predict, oracle, cap, manager, clock, scenario);
+}
+
+#[test, expected_failure(abort_code = 3)] // EInvalidMarginDebt
+fun deploy_position_margin_debt_too_high_fails() {
+    let mut scenario = test_scenario::begin(KEEPER);
+    let (mut predict, oracle, cap, mut manager, clock, market_key) =
+        predict_fixture::setup(&mut scenario, KEEPER, 100_000_000_000);
+
+    scenario.next_tx(OWNER);
+    position_manager::request_open<TEST_QUOTE>(
+        object::id(&manager),
+        12_000,
+        market_key,
+        coin::mint_for_testing<SUI>(1_000_000, scenario.ctx()),
+        &clock,
+        scenario.ctx(),
+    );
+
+    scenario.next_tx(KEEPER);
+    let mut pos = scenario.take_shared<MarginPosition<TEST_QUOTE>>();
+    let escrow_coin = position_executor::take_escrow(&mut pos, &manager, scenario.ctx());
+    destroy(escrow_coin);
+
+    // > 110% of the 10_000_000 collateral, outside DEBT_TOLERANCE_BPS.
+    let collateral = coin::mint_for_testing<TEST_QUOTE>(10_000_000, scenario.ctx());
+    position_executor::deploy_position<TEST_QUOTE>(
+        &mut pos,
+        &mut predict,
+        &mut manager,
+        &oracle,
+        collateral,
+        object::id_from_address(@0xCAFE),
+        12_000_000,
         &clock,
         scenario.ctx(),
     );
@@ -246,6 +326,7 @@ fun execute_close_returns_proceeds_and_closes() {
     assert!(margin_position::margin_debt(&pos) == 0);
     assert!(margin_position::margin_manager_id(&pos).is_none());
     assert!(margin_position::pending_intent(&pos).is_none());
+    assert!(margin_position::collateral_sui(&pos) == 0);
     assert!(proceeds.value() > 0);
 
     destroy(proceeds);
@@ -289,6 +370,7 @@ fun execute_settle_after_settlement_closes_position() {
 
     assert!(margin_position::status(&pos) == margin_position::status_closed());
     assert!(margin_position::position(&pos).is_none());
+    assert!(margin_position::collateral_sui(&pos) == 0);
     assert!(proceeds.value() > 0);
 
     destroy(proceeds);

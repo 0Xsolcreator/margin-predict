@@ -159,6 +159,7 @@ public fun open_position(
         clock,
         scenario.ctx(),
     );
+    destroy(margin_position::take_escrow(&mut pos));
     let snapshot = types::new_snapshot(market_key, quantity, 12_000, clock.timestamp_ms());
     margin_position::confirm_open(&mut pos, snapshot, object::id(manager), margin_debt);
     pos

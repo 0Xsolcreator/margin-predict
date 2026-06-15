@@ -13,13 +13,20 @@ use margin_predict::types;
 use margin_predict::margin_position::{Self, MarginPosition};
 
 // === Errors ===
-const EZeroAmount: u64       = 0;
-const EWrongStatus: u64      = 1;
-const EOracleNotSettled: u64 = 2;
+const EZeroAmount: u64        = 0;
+const EWrongStatus: u64       = 1;
+const EOracleNotSettled: u64  = 2;
+const EInvalidMarginDebt: u64 = 3;
 
 // === Constants ===
 const PROBE_QUANTITY: u64    = 1_000_000; // $1 notional (6-decimal DUSDC)
 const SIZING_ITERATIONS: u64 = 4;
+const BPS: u64                  = 10_000;
+/// `margin_debt` (DBUSDC borrowed) must be within this tolerance of
+/// `collateral.value()` (DUSDC received from swapping that borrow), bounding
+/// the keeper-reported debt to plausible swap slippage/fees and catching
+/// gross misreporting (e.g. decimal-scaling bugs).
+const DEBT_TOLERANCE_BPS: u64 = 1_000; // 10%
 
 // === Open: step 1 ===
 
@@ -57,6 +64,10 @@ public fun deploy_position<T>(
     };
 
     let total_amount = collateral.value();
+    let lower_debt = (((total_amount as u128) * ((BPS - DEBT_TOLERANCE_BPS) as u128) / (BPS as u128)) as u64);
+    let upper_debt = (((total_amount as u128) * ((BPS + DEBT_TOLERANCE_BPS) as u128) / (BPS as u128)) as u64);
+    assert!(margin_debt >= lower_debt && margin_debt <= upper_debt, EInvalidMarginDebt);
+
     predict_manager::deposit<T>(manager, collateral, ctx);
 
     let quantity = size_position(predict, oracle, market_key_val, total_amount, clock);
