@@ -156,6 +156,3 @@ export const HF_SOFT_BPS = 10_500n; // ≤ 1.05x → soft liquidation
 
 export const SWAP_SLIPPAGE_BPS = parseInt(process.env.SWAP_SLIPPAGE_BPS ?? '100', 10);
 export const SWAP_DEEP_AMOUNT  = parseFloat(process.env.SWAP_DEEP_AMOUNT ?? '0');
-
-// Fallback SUI/USD price used only to size DBUSDC borrows — never for risk.
-export const SUI_PRICE_FALLBACK = parseFloat(process.env.SUI_PRICE_ESTIMATE ?? '1.5');

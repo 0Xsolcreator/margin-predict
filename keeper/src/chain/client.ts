@@ -13,7 +13,6 @@ import {
   MARGIN_POOL_KEY,
   MARGIN_MANAGER_KEY,
   DEEP_COIN,
-  SUI_PRICE_FALLBACK,
   requireMarginManagerId,
   getSwapPool,
 } from '../config.js';
@@ -96,19 +95,23 @@ export async function injectPythPrices(
 // ---------------------------------------------------------------------------
 
 /**
- * Live SUI/USD price from Pyth Hermes, falling back to `SUI_PRICE_FALLBACK`.
- * Used only to size DBUSDC borrows — never for any on-chain risk check.
+ * Live SUI/USD price from Pyth Hermes, used to size DBUSDC borrows.
+ * Throws if Hermes is unreachable or returns no usable price — opening a
+ * position with a guessed price would silently mis-size the borrow (no
+ * on-chain check ties realized leverage back to the requested leverageBps),
+ * so failing here is safer than proceeding. Safe to retry: nothing on-chain
+ * has been touched yet at this point.
  */
 export async function fetchSuiPrice(): Promise<number> {
-  try {
-    const feedId = PYTH_FEED_IDS[NETWORK].SUI;
-    const res = await fetch(`${PYTH_HERMES[NETWORK]}/api/latest_price_feeds?ids[]=${feedId}`);
-    if (!res.ok) return SUI_PRICE_FALLBACK;
-    const [feed] = (await res.json()) as Array<{ price?: { price: string; expo: number } }>;
-    if (!feed?.price) return SUI_PRICE_FALLBACK;
-    const price = Number(feed.price.price) * 10 ** Number(feed.price.expo);
-    return price > 0 ? price : SUI_PRICE_FALLBACK;
-  } catch {
-    return SUI_PRICE_FALLBACK;
+  const feedId = PYTH_FEED_IDS[NETWORK].SUI;
+  const res = await fetch(`${PYTH_HERMES[NETWORK]}/api/latest_price_feeds?ids[]=${feedId}`);
+  if (!res.ok) {
+    throw new Error(`Pyth Hermes unreachable (${res.status}) — cannot size DBUSDC borrow`);
   }
+  const [feed] = (await res.json()) as Array<{ price?: { price: string; expo: number } }>;
+  const price = feed?.price ? Number(feed.price.price) * 10 ** Number(feed.price.expo) : NaN;
+  if (!(price > 0)) {
+    throw new Error('Pyth Hermes returned no usable SUI/USD price — cannot size DBUSDC borrow');
+  }
+  return price;
 }
