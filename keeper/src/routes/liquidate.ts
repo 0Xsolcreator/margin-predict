@@ -23,6 +23,7 @@ import {
 import {
   readHealthFactor,
   readLiquidationFlagged,
+  readPositionFinancials,
   buildFlagLiquidation,
   buildExecuteLiquidation,
 } from '../chain/contract.js';
@@ -61,7 +62,7 @@ export function registerLiquidateRoute(app: FastifyInstance): void {
       const isHard = hf <= HF_HARD_BPS;
       const alreadyFlagged = await readLiquidationFlagged(base, address, positionId);
 
-      const currentDebt = BigInt(record.marginDebt);
+      const { owner, marginDebt: currentDebt, collateralSui } = await readPositionFinancials(base, address, positionId);
       const { repayAmount, newDebt } = isHard
         ? { repayAmount: currentDebt, newDebt: 0n }
         : computeSoftLiqDebt(currentDebt);
@@ -78,8 +79,8 @@ export function registerLiquidateRoute(app: FastifyInstance): void {
       unwindPosition({
         tx, marginClient, swapClient, swapPool, proceedsCoin,
         repayAmount,
-        withdrawSuiAmount: isHard ? BigInt(record.collateralSui) : 0n,
-        recipient: record.owner,
+        withdrawSuiAmount: isHard ? collateralSui : 0n,
+        recipient: owner,
         keeperAddress: address,
       });
 
@@ -88,22 +89,18 @@ export function registerLiquidateRoute(app: FastifyInstance): void {
       if (isHard) {
         deletePosition(positionId);
       } else {
-        setPosition(positionId, {
-          ...record,
-          marginDebt: newDebt.toString(),
-          updatedAt: new Date().toISOString(),
-        });
+        setPosition(positionId, { ...record, updatedAt: new Date().toISOString() });
       }
 
       return reply.send({
         digest: result.digest,
         positionId,
-        owner: record.owner,
+        owner,
         mode: isHard ? 'hard' : 'soft',
         healthFactorBps: hf.toString(),
         repaidDebt: repayAmount.toString(),
         remainingDebt: newDebt.toString(),
-        withdrawnCollateral: isHard ? record.collateralSui : '0',
+        withdrawnCollateral: isHard ? collateralSui.toString() : '0',
       });
     },
   );

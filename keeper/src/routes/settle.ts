@@ -13,7 +13,7 @@ import {
   createSwapClient,
   injectPythPrices,
 } from '../chain/client.js';
-import { readOracleSettled, buildSettlePosition } from '../chain/contract.js';
+import { readOracleSettled, readPositionFinancials, buildSettlePosition } from '../chain/contract.js';
 import { unwindPosition } from '../deepbook/unwind.js';
 import { getPosition, deletePosition } from '../store/positions.js';
 import { executeTransaction } from '../chain/transaction.js';
@@ -45,6 +45,8 @@ export function registerSettleRoute(app: FastifyInstance): void {
       const marginClient = createMarginClient(base, address);
       const swapClient = createSwapClient(base, address);
 
+      const { owner, marginDebt, collateralSui } = await readPositionFinancials(base, address, positionId);
+
       const tx = new Transaction();
       await injectPythPrices(base, tx, address);
 
@@ -52,9 +54,9 @@ export function registerSettleRoute(app: FastifyInstance): void {
 
       unwindPosition({
         tx, marginClient, swapClient, swapPool, proceedsCoin,
-        repayAmount: BigInt(record.marginDebt),
-        withdrawSuiAmount: BigInt(record.collateralSui),
-        recipient: record.owner,
+        repayAmount: marginDebt,
+        withdrawSuiAmount: collateralSui,
+        recipient: owner,
         keeperAddress: address,
       });
 
@@ -64,9 +66,9 @@ export function registerSettleRoute(app: FastifyInstance): void {
       return reply.send({
         digest: result.digest,
         positionId,
-        owner: record.owner,
-        repaidDebt: record.marginDebt,
-        withdrawnCollateral: record.collateralSui,
+        owner,
+        repaidDebt: marginDebt.toString(),
+        withdrawnCollateral: collateralSui.toString(),
       });
     },
   );

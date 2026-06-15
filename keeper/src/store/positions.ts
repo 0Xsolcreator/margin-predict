@@ -1,9 +1,10 @@
-/// File-based position store.
+/// File-based position registry.
 ///
-/// The keeper runs ONE shared MarginManager. Every open MarginPosition<DUSDC>
-/// borrows against that manager, so this store tracks each position's slice of
-/// debt and collateral so the keeper can unwind the right amounts on
-/// close / settle / liquidation.
+/// Tracks which MarginPosition ids this keeper has opened, so /positions can
+/// enumerate them (Sui has no on-chain index of shared objects by type).
+/// Financial fields (status, margin debt, SUI collateral) are NOT cached here
+/// — they're read live from the on-chain MarginPosition via
+/// `chain/contract.ts#readPositionFinancials`, which is authoritative.
 
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -15,12 +16,6 @@ const STORE_PATH = join(DATA_DIR, 'positions.json');
 export interface PositionRecord {
   /** Owner address — receives funds on close / settle / hard liquidation. */
   owner: string;
-  /** Shared MarginManager object id this position's borrow lives in. */
-  marginManagerId: string;
-  /** Outstanding DBUSDC principal (raw, 6 decimals). */
-  marginDebt: string;
-  /** SUI collateral deposited for this position (raw, 9 decimals). */
-  collateralSui: string;
   updatedAt: string;
 }
 

@@ -115,6 +115,42 @@ export async function readOracleSettled(
   return returns[0][0][0] === 1;
 }
 
+export interface PositionFinancials {
+  owner: string;
+  /** Lifecycle status (0=PENDING_OPEN, 1=OPEN, 2=CLOSED, 3=LIQUIDATED, 4=CANCELLED). */
+  status: number;
+  /** Outstanding DBUSDC principal (raw, 6 decimals). */
+  marginDebt: bigint;
+  /** SUI collateral deposited for this position (raw, 9 decimals). */
+  collateralSui: bigint;
+}
+
+/** Live owner / status / debt / collateral for an OPEN position, read directly
+ * from the on-chain `MarginPosition`. This is the authoritative source for
+ * amounts moved during close / settle / liquidation — the keeper's local
+ * store only tracks which position ids exist. */
+export async function readPositionFinancials(
+  client: SuiGrpcClient,
+  sender: string,
+  positionId: string,
+): Promise<PositionFinancials> {
+  const pkg = requireMarginPredictPackage();
+  const returns = await simulateReturns(client, sender, (tx) => {
+    const args = [tx.object(positionId)];
+    const typeArgs = [DUSDC_TYPE];
+    tx.moveCall({ target: `${pkg}::margin_position::owner`, typeArguments: typeArgs, arguments: args });
+    tx.moveCall({ target: `${pkg}::margin_position::status`, typeArguments: typeArgs, arguments: args });
+    tx.moveCall({ target: `${pkg}::margin_position::margin_debt`, typeArguments: typeArgs, arguments: args });
+    tx.moveCall({ target: `${pkg}::margin_position::collateral_sui`, typeArguments: typeArgs, arguments: args });
+  });
+  return {
+    owner: decodeAddress(returns[0][0]),
+    status: returns[1][0][0],
+    marginDebt: decodeU64(returns[2][0]),
+    collateralSui: decodeU64(returns[3][0]),
+  };
+}
+
 /** Whether the position already has a liquidation flag set. */
 export async function readLiquidationFlagged(
   client: SuiGrpcClient,

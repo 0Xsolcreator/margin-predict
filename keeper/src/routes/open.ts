@@ -107,9 +107,6 @@ export function registerOpenRoute(app: FastifyInstance): void {
 
       setPosition(positionId, {
         owner,
-        marginManagerId,
-        marginDebt: marginDebt.toString(),
-        collateralSui: escrowValue.toString(),
         updatedAt: new Date().toISOString(),
       });
 
