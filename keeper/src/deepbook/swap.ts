@@ -65,7 +65,7 @@ export function makeSwapClient(
   address: string,
   pool: SwapPool,
   deepCoin: SwapAsset,
-): SwapClient {
+) {
   return base.$extend(
     deepbook({
       address,
