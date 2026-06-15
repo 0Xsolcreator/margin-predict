@@ -17,7 +17,7 @@ import { SimulationError } from './errors.js';
 // BCS helpers
 // ---------------------------------------------------------------------------
 
-function decodeU64(bcs: Uint8Array): bigint {
+export function decodeU64(bcs: Uint8Array): bigint {
   let result = 0n;
   for (let i = 7; i >= 0; i--) {
     result = (result << 8n) | BigInt(bcs[i]);
@@ -25,7 +25,7 @@ function decodeU64(bcs: Uint8Array): bigint {
   return result;
 }
 
-function decodeAddress(bcs: Uint8Array): string {
+export function decodeAddress(bcs: Uint8Array): string {
   return '0x' + Buffer.from(bcs).toString('hex');
 }
 
