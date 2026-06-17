@@ -6,6 +6,7 @@ import type { TransactionObjectArgument } from '@mysten/sui/transactions';
 import type { SuiGrpcClient } from '@mysten/sui/grpc';
 import {
   PREDICT_ID,
+  PREDICT_PACKAGE,
   DUSDC_TYPE,
   CLOCK_ID,
   requireMarginPredictPackage,
@@ -105,10 +106,10 @@ export async function readOracleSettled(
   sender: string,
   oracleId: string,
 ): Promise<boolean> {
-  const pkg = requireMarginPredictPackage();
+  // `oracle` lives in the deepbook_predict package, not margin_predict.
   const returns = await simulateReturns(client, sender, (tx) => {
     tx.moveCall({
-      target: `${pkg}::oracle::is_settled`,
+      target: `${PREDICT_PACKAGE}::oracle::is_settled`,
       arguments: [tx.object(oracleId)],
     });
   });
