@@ -1,0 +1,24 @@
+{
+  "name": "@margin-predict/examples",
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "request-open":    "tsx 1_request_open.ts",
+    "keeper-open":     "tsx 2_keeper_open.ts",
+    "check":           "tsx 3_check_position.ts",
+    "request-close":   "tsx 4_request_close.ts",
+    "keeper-close":    "tsx 5_keeper_close.ts",
+    "liquidate":       "tsx 6_keeper_liquidate.ts",
+    "cancel-intent":   "tsx 7_cancel_intent.ts",
+    "e2e":             "tsx run_e2e.ts"
+  },
+  "dependencies": {
+    "@mysten/sui": "latest",
+    "dotenv": "^16.4.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0"
+  }
+}

@@ -12,7 +12,8 @@
 import type { FastifyInstance } from 'fastify';
 import { Transaction } from '@mysten/sui/transactions';
 import {
-  DBUSDC_COIN,
+  BPS,
+  DUSDC_COIN,
   MARGIN_MANAGER_KEY,
   SWAP_SLIPPAGE_BPS,
   SWAP_DEEP_AMOUNT,
@@ -72,6 +73,20 @@ export function registerOpenRoute(app: FastifyInstance): void {
       const swapClient = createSwapClient(base, address);
 
       const quote = await swapClient.deepbook.getBaseQuantityOutInputFee(swapPool.key, borrowHuman);
+      app.log.info({ borrowHuman, quoteBaseOut: quote.baseOut, quoteQuoteOut: quote.quoteOut }, 'DBUSDC→DUSDC swap quote');
+      if (quote.baseOut <= 0) {
+        // Pool lot size requires ~1.1 DBUSDC minimum. Compute how much SUI is needed.
+        const POOL_MIN_BORROW = 1.1;
+        const leverageFactor = leverageBps / BPS - 1;
+        const minSui = (POOL_MIN_BORROW / (suiPrice * leverageFactor)).toFixed(2);
+        return reply.code(422).send({
+          error:
+            `Borrow amount too small: ${borrowHuman.toFixed(4)} DBUSDC → 0 DUSDC ` +
+            `(SUI price $${suiPrice.toFixed(4)}, pool minimum ~1.1 DBUSDC). ` +
+            `Use at least ${minSui} SUI collateral at ${leverageBps} bps leverage, ` +
+            `or increase leverage toward 14000 bps.`,
+        });
+      }
       const minDusdcOut = quote.baseOut * (1 - SWAP_SLIPPAGE_BPS / 10_000);
 
       const tx = new Transaction();
@@ -100,7 +115,11 @@ export function registerOpenRoute(app: FastifyInstance): void {
       tx.transferObjects([dbusdcLeftover, deepLeftover], address);
 
       // 5. Deploy into Predict, confirm OPEN
-      const marginDebt = BigInt(Math.round(borrowHuman * DBUSDC_COIN.scalar));
+      // margin_debt must be within ±10% of the DUSDC coin value (deploy_position checks this).
+      // We use the expected DUSDC output (from the pre-flight quote) so the stored debt
+      // matches the actual collateral deployed, and the tolerance check always passes
+      // even when DUSDC/DBUSDC exchange rate deviates from 1:1.
+      const marginDebt = BigInt(Math.round(quote.baseOut * DUSDC_COIN.scalar));
       buildDeployPosition(tx, positionId, oracleId, dusdcOut, marginManagerId, marginDebt);
 
       const result = await executeTransaction(marginClient, keypair, tx, 'Open position');
