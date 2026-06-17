@@ -153,7 +153,10 @@ describe('POST /positions/:positionId/open', () => {
 
     expect(res.statusCode).toBe(200);
 
-    // 10 SUI * $2 = $20 collateral; borrow = $20 * (1.2 - 1) = $4 -> 4_000_000 raw (6dp)
+    // 10 SUI * $2 = $20 collateral; borrow = $20 * (1.2 - 1) = $4 DBUSDC.
+    // marginDebt is the *swapped DUSDC output* (quote.baseOut = 3.96), not the
+    // borrow — so the contract's ±10% tolerance check sees the actual deployed
+    // collateral. 3.96 DUSDC -> 3_960_000 raw (6dp).
     const body = res.json();
     expect(body).toMatchObject({
       digest: 'DIGEST123',
@@ -162,7 +165,7 @@ describe('POST /positions/:positionId/open', () => {
       leverageBps: 12_000,
       collateralSui: '10000000000',
       marginManagerId: MARGIN_MANAGER_ID,
-      marginDebt: '4000000',
+      marginDebt: '3960000',
     });
 
     // 1. Escrowed SUI is deposited into the shared MarginManager.
@@ -193,7 +196,7 @@ describe('POST /positions/:positionId/open', () => {
       ORACLE_ID,
       mockArg(10),
       MARGIN_MANAGER_ID,
-      4_000_000n,
+      3_960_000n,
     );
 
     // 5. Transaction is signed/executed under the keeper's keypair.
@@ -208,6 +211,8 @@ describe('POST /positions/:positionId/open', () => {
   });
 
   it('sizes the borrow proportionally to leverage (1.4x => 40% of collateral value)', async () => {
+    // $20 collateral * (1.4 - 1) = $8 borrow; swap returns ~8 DUSDC at 1:1.
+    vi.mocked(createSwapClient).mockReturnValue(makeMockSwapClient({ baseOut: 8, quoteOut: 0 }));
     const app = buildApp({ logger: false });
     const res = await app.inject({
       method: 'POST',
@@ -216,7 +221,7 @@ describe('POST /positions/:positionId/open', () => {
     });
 
     expect(res.statusCode).toBe(200);
-    expect(res.json().marginDebt).toBe('8000000'); // $20 * 0.4 = $8 -> 8_000_000 raw
+    expect(res.json().marginDebt).toBe('8000000'); // 8 DUSDC swap output -> 8_000_000 raw
     expect(marginClient.deepbook.marginManager.borrowQuote).toHaveBeenCalledWith(MARGIN_MANAGER_KEY, expect.closeTo(8, 9));
   });
 });

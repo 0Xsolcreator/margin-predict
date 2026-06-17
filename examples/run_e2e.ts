@@ -25,12 +25,12 @@ import { createInterface } from 'node:readline/promises';
 import { stdin, stdout } from 'node:process';
 import { Transaction } from '@mysten/sui/transactions';
 import {
-  PREDICT_PACKAGE, CLOCK_ID, DUSDC_TYPE,
+  PREDICT_PACKAGE, PREDICT_ID, CLOCK_ID, DUSDC_TYPE,
   MARGIN_PREDICT_PACKAGE, PREDICT_MANAGER_ID, KEEPER_URL, NETWORK,
   createSuiClient, loadUserKeypair,
   signAndExecute, extractPositionId, type TxResult,
   keeperPost, keeperGet,
-  log,
+  fetchSuiUsdPrice, decodeU64, log,
 } from './shared.ts';
 import {
   fetchActiveOracles, fetchOracleState,
@@ -139,12 +139,17 @@ async function selectStrike(
   }
 }
 
-async function selectCollateral(): Promise<number | null> {
+async function selectCollateral(balanceSui: number | null): Promise<number | null> {
+  if (balanceSui !== null) console.log(`\n  Wallet balance: ${balanceSui.toFixed(4)} SUI`);
   while (true) {
-    const answer = await ask('\n  Collateral in SUI [1.0] or q to cancel: ');
+    const answer = await ask('  Collateral in SUI [1.0] or q to cancel: ');
     if (answer.toLowerCase() === 'q') return null;
     const value = answer === '' ? 1.0 : parseFloat(answer);
     if (Number.isNaN(value) || value <= 0) { console.log('  Enter a positive number.'); continue; }
+    if (balanceSui !== null && value + GAS_BUFFER_SUI > balanceSui) {
+      console.log(`  Not enough SUI — need ~${(value + GAS_BUFFER_SUI).toFixed(4)} (incl. gas), have ${balanceSui.toFixed(4)}.`);
+      continue;
+    }
     return value;
   }
 }
@@ -166,6 +171,78 @@ async function selectLeverage(): Promise<number | null> {
 async function confirmPrompt(msg: string): Promise<boolean> {
   const answer = await ask(`\n  ${msg} [y/N]: `);
   return answer.toLowerCase() === 'y';
+}
+
+// ── Quote / balance helpers ─────────────────────────────────────────────────
+
+const PROBE_QUANTITY = 1_000_000;   // $1 notional (6dp) — mirrors position_executor
+const POOL_MIN_BORROW = 1.1;        // pool lot minimum in DBUSDC — mirrors keeper open.ts
+const GAS_BUFFER_SUI = 0.05;        // leave room for gas
+
+/** User's spendable SUI (raw mist → SUI). */
+async function getSuiBalance(address: string): Promise<number> {
+  const client = createSuiClient();
+  const { totalBalance } = await client.getBalance({ owner: address, coinType: '0x2::sui::SUI' });
+  return Number(totalBalance) / 1e9;
+}
+
+interface PositionQuote {
+  borrowUsd: number;
+  premiumPct: number;   // entry price per $1 of if-hit payout (0–1)
+  payoutUsd: number;    // gross redemption if the option fully hits
+  profitUsd: number;    // payout − borrow (collateral is returned separately)
+}
+
+/**
+ * Live entry premium for `direction` @ `strikeUsd`, read via
+ * deepbook_predict::predict::get_trade_amounts on a $1 notional probe. This is
+ * the price per $1 of if-hit payout (≈ implied probability). Returns null if
+ * the market can't be quoted (devInspect aborts — e.g. deep-OTM strike).
+ */
+async function fetchPremiumPct(
+  oracle: OracleSummary,
+  direction: 'up' | 'down',
+  strikeUsd: number,
+): Promise<number | null> {
+  try {
+    const client  = createSuiClient();
+    const address = loadUserKeypair().toSuiAddress();
+    const tx = new Transaction();
+    tx.setSender(address);
+    const marketKey = tx.moveCall({
+      target: `${PREDICT_PACKAGE}::market_key::${direction}`,
+      arguments: [tx.pure.id(oracle.oracle_id), tx.pure.u64(BigInt(oracle.expiry)), tx.pure.u64(usdToFixed(strikeUsd))],
+    });
+    tx.moveCall({
+      target: `${PREDICT_PACKAGE}::predict::get_trade_amounts`,
+      arguments: [tx.object(PREDICT_ID), tx.object(oracle.oracle_id), marketKey, tx.pure.u64(PROBE_QUANTITY), tx.object(CLOCK_ID)],
+    });
+    const res = await client.devInspectTransactionBlock({ sender: address, transactionBlock: tx });
+    const probeCost = res.results?.[1]?.returnValues?.[0]?.[0]; // DUSDC (6dp) to buy $1 if-hit
+    if (!probeCost) return null;
+    const pct = Number(decodeU64(probeCost)) / PROBE_QUANTITY;
+    return pct > 0 ? pct : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Projects the borrowed budget and if-hit economics. Collateral (SUI) is valued
+ * at `suiUsd` — the same SUI/USD price the keeper sizes the borrow with — NOT
+ * the oracle's underlying spot. Returns null if either input is unavailable.
+ */
+function projectEconomics(
+  premiumPct: number | null,
+  collateralSui: number,
+  leverageBps: number,
+  suiUsd: number | null,
+): PositionQuote | null {
+  if (premiumPct === null || suiUsd === null) return null;
+  const borrowUsd = collateralSui * suiUsd * (leverageBps / 10000 - 1);
+  if (!(borrowUsd > 0)) return null;
+  const payoutUsd = borrowUsd / premiumPct; // quantity = budget / premium; payout = quantity
+  return { borrowUsd, premiumPct, payoutUsd, profitUsd: payoutUsd - borrowUsd };
 }
 
 // ── On-chain helpers ──────────────────────────────────────────────────────────
@@ -381,6 +458,9 @@ async function main() {
   // ── Fetch spot price ──────────────────────────────────────────────────────
   const state   = await fetchOracleState(oracle.oracle_id).catch(() => null);
   const spotUsd = state?.latest_price ? fixedToUsd(state.latest_price.spot) : null;
+  let balanceSui: number | null = null;
+  try { balanceSui = await getSuiBalance(loadUserKeypair().toSuiAddress()); } catch { /* no key / RPC down — skip balance */ }
+  const suiUsd = await fetchSuiUsdPrice();
 
   section('Step 2 — Configure position');
   console.log(`  Asset     : ${oracle.underlying_asset}`);
@@ -395,8 +475,17 @@ async function main() {
   const strikeUsd = await selectStrike(oracle, spotUsd);
   if (strikeUsd === null) { rl.close(); return; }
 
+  // Live premium for this strike (≈ implied chance it hits). Shown immediately
+  // so the strike choice can be judged before committing collateral/leverage.
+  const premiumPct = await fetchPremiumPct(oracle, direction, strikeUsd);
+  if (premiumPct !== null) {
+    console.log(`\n  Entry premium : ${(premiumPct * 100).toFixed(1)}%  (≈ implied chance it hits; each $1 of payout costs $${premiumPct.toFixed(3)})`);
+  } else {
+    console.log(`\n  Entry premium : not quotable for this strike (likely too far from spot — the open would be rejected).`);
+  }
+
   // ── 2c. Collateral ────────────────────────────────────────────────────────
-  const collateralSui = await selectCollateral();
+  const collateralSui = await selectCollateral(balanceSui);
   if (collateralSui === null) { rl.close(); return; }
 
   // ── 2d. Leverage ──────────────────────────────────────────────────────────
@@ -410,10 +499,32 @@ async function main() {
   console.log(`  Market     : ${oracle.underlying_asset} ${direction.toUpperCase()} @ ${formatUsd(strikeUsd)}`);
   console.log(`  Oracle     : ${oracle.oracle_id}`);
   console.log(`  Expiry     : ${formatExpiry(oracle.expiry)}`);
-  console.log(`  Collateral : ${collateralSui} SUI`);
-  console.log(`  Leverage   : ${(leverageBps / 100).toFixed(2)}x (${leverageBps} bps)`);
-  console.log(`  Borrow est : ~collateral_SUI × SUI/USD × ${((leverageBps / 10000 - 1) * 100).toFixed(0)}%  DBUSDC`);
-  console.log(`               (exact amount fetched from Pyth at open time)`);
+  console.log(`  Collateral : ${collateralSui} SUI${suiUsd !== null ? `  (~$${(collateralSui * suiUsd).toFixed(2)} at $${suiUsd.toFixed(4)}/SUI)` : ''}`);
+  console.log(`  Leverage   : ${(leverageBps / 10000).toFixed(2)}x (${leverageBps} bps)`);
+
+  // Balance & pool-minimum collateral, valued in SUI/USD (mirrors keeper open.ts sizing)
+  if (balanceSui !== null) console.log(`  Wallet bal : ${balanceSui.toFixed(4)} SUI`);
+  const leverageFactor = leverageBps / 10000 - 1;
+  if (suiUsd !== null && leverageFactor > 0) {
+    const minCollateral = POOL_MIN_BORROW / (suiUsd * leverageFactor);
+    console.log(`  Min coll.  : ~${minCollateral.toFixed(2)} SUI (pool minimum at this leverage)`);
+    if (collateralSui < minCollateral) {
+      console.log(`  ⚠  Below pool minimum — the open will be rejected. Raise collateral or leverage.`);
+    }
+  }
+
+  // Estimated economics (uses the premium fetched at strike time + SUI/USD)
+  const quote = projectEconomics(premiumPct, collateralSui, leverageBps, suiUsd);
+  if (quote && suiUsd !== null) {
+    const collUsd = collateralSui * suiUsd;
+    const returnPct = (quote.profitUsd / collUsd) * 100;
+    console.log(`  Borrow est : ~$${quote.borrowUsd.toFixed(2)} DBUSDC  (entry premium ${(quote.premiumPct * 100).toFixed(1)}%)`);
+    console.log(`  If it HITS : ~$${quote.payoutUsd.toFixed(2)} payout  →  +$${quote.profitUsd.toFixed(2)} profit  (+${returnPct.toFixed(0)}% on your collateral)`);
+    console.log(`  If it MISS : −$${collUsd.toFixed(2)} (−100% — collateral lost to repay the borrow)`);
+    console.log(`               (gross, excl. swap fees/slippage & borrow interest)`);
+  } else if (suiUsd !== null) {
+    console.log(`  Borrow est : ~$${(collateralSui * suiUsd * leverageFactor).toFixed(2)} DBUSDC (profit estimate needs a quotable strike)`);
+  }
 
   const ok = await confirmPrompt('Proceed with this position?');
   if (!ok) { console.log('  Cancelled.'); rl.close(); return; }
