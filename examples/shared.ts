@@ -163,6 +163,35 @@ export async function keeperGet<T = unknown>(path: string): Promise<T> {
   return data;
 }
 
+// ── SUI/USD price (for valuing SUI collateral, same source as the keeper) ─────
+
+const PYTH_HERMES = NETWORK === 'mainnet' ? 'https://hermes.pyth.network' : 'https://hermes-beta.pyth.network';
+const SUI_FEED_ID = NETWORK === 'mainnet'
+  ? '0x23d7315113f5b1d3ba7a83604c44b94d79f4fd69af77f804fc7f920a6dc65744'
+  : '0x50c67b3fd225db8912a424dd4baed60ffdde625ed2feaaf283724f9608fea266';
+
+/** Live SUI/USD from Pyth Hermes. null if unreachable (callers degrade gracefully). */
+export async function fetchSuiUsdPrice(): Promise<number | null> {
+  try {
+    const res = await fetch(`${PYTH_HERMES}/api/latest_price_feeds?ids[]=${SUI_FEED_ID}`);
+    if (!res.ok) return null;
+    const [feed] = (await res.json()) as Array<{ price?: { price: string; expo: number } }>;
+    const price = feed?.price ? Number(feed.price.price) * 10 ** Number(feed.price.expo) : NaN;
+    return price > 0 ? price : null;
+  } catch {
+    return null;
+  }
+}
+
+// ── BCS decode (devInspect return values) ────────────────────────────────────
+
+/** Decodes a little-endian BCS u64 (as returned by devInspect returnValues). */
+export function decodeU64(bytes: number[] | Uint8Array): bigint {
+  let result = 0n;
+  for (let i = 7; i >= 0; i--) result = (result << 8n) | BigInt(bytes[i]);
+  return result;
+}
+
 // ── Logging ──────────────────────────────────────────────────────────────────
 
 export function log(msg: string) {

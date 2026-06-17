@@ -10,6 +10,7 @@
     "keeper-close":    "tsx 5_keeper_close.ts",
     "liquidate":       "tsx 6_keeper_liquidate.ts",
     "cancel-intent":   "tsx 7_cancel_intent.ts",
+    "recover":         "tsx 8_recover_pending.ts",
     "e2e":             "tsx run_e2e.ts"
   },
   "dependencies": {
