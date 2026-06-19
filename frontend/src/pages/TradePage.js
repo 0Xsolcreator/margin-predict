@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { useOracleCycle } from '../hooks/useOracleCycle';
 import Header from '../components/trade/Header';
 import PriceChart from '../components/trade/PriceChart';
 import LadderPanel from '../components/trade/LadderPanel';
@@ -24,8 +25,7 @@ const BTC_PYTH_FEED = '0xe62df6c8b4a85fe1a67db44dc12de5db330f7ac66b72dc658afedf0
 const levToBps = lev => Math.round(11000 + ((Math.min(50, Math.max(1, lev)) - 1) / 49) * 3000);
 
 const fmtCountdown = ms => {
-  if (ms == null) return '—';
-  if (ms <= 0) return 'SETTLED';
+  if (ms == null || ms <= 0) return '--:--:--';
   const z = n => String(n).padStart(2, '0');
   return `${z(Math.floor(ms / 3600000))}:${z(Math.floor((ms % 3600000) / 60000))}:${z(Math.floor((ms % 60000) / 1000))}`;
 };
@@ -37,7 +37,7 @@ function TradePage() {
   const [address, setAddress] = useState(api.getAddress());
   const [authOpen, setAuthOpen] = useState(false);
 
-  const [oracle, setOracle] = useState(null);       // { oracle, latest_price }
+  const oracle = useOracleCycle();                   // { oracle, latest_price }
   const [balance, setBalance] = useState(0);
   const [positions, setPositions] = useState([]);
   const [busy, setBusy] = useState(false);
@@ -58,16 +58,6 @@ function TradePage() {
   const spotUsd = pythPrice ?? oracleSpot;
   const tickUsd = oracle ? Number(oracle.oracle?.tick_size ?? FP) / FP : 1;
   const expiry = oracle ? Number(oracle.oracle?.expiry) : null;
-
-  // public: pick the soonest active market, then load its price + params
-  useEffect(() => {
-    (async () => {
-      try {
-        const markets = await api.listOracles();
-        if (markets[0]) setOracle(await api.getOracle(markets[0].oracle_id));
-      } catch (e) { setError(e.message); }
-    })();
-  }, []);
 
   // authed: balance + positions, polled while signed in
   const refresh = useCallback(async () => {
