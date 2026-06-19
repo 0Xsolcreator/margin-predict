@@ -22,9 +22,12 @@ import Fastify from 'fastify';
 import { EnokiClient, EnokiClientError } from '@mysten/enoki';
 import { SuiGrpcClient } from '@mysten/sui/grpc';
 import { Ed25519Keypair } from '@mysten/sui/keypairs/ed25519';
+import { Transaction } from '@mysten/sui/transactions';
 import { getZkLoginSignature } from '@mysten/sui/zklogin';
-import { fromBase64 } from '@mysten/sui/utils';
+import { fromBase64, toBase64 } from '@mysten/sui/utils';
 import type { ZkLoginSignatureInputs } from '@mysten/sui/zklogin';
+import { registerPositionRoutes } from './positions.ts';
+import { registerOracleRoutes } from './oracles.ts';
 
 const NETWORK = (process.env.NETWORK ?? 'testnet') as 'mainnet' | 'testnet' | 'devnet';
 const RPC_URL = process.env.SUI_RPC_URL ?? `https://fullnode.${NETWORK}.sui.io:443`;
@@ -41,7 +44,7 @@ const sui = new SuiGrpcClient({ network: NETWORK, baseUrl: RPC_URL });
 // ephemeral keys are the keys to user funds — for production, move to a KMS /
 // encrypted store and run a single trusted instance (or shard by user).
 type Pending = { kp: Ed25519Keypair; randomness: string; maxEpoch: number; expires: number };
-type Session = { address: string; kp: Ed25519Keypair; zkp: ZkLoginSignatureInputs; maxEpoch: number; expires: number };
+export type Session = { address: string; kp: Ed25519Keypair; zkp: ZkLoginSignatureInputs; maxEpoch: number; expires: number };
 const pending = new Map<string, Pending>();
 const sessions = new Map<string, Session>();
 const token = () => crypto.randomBytes(32).toString('hex');
@@ -59,12 +62,37 @@ export function getSession(t: string): Session {
   }
   return s;
 }
-function authed(req: { headers: Record<string, unknown> }): Session {
+export function authed(req: { headers: Record<string, unknown> }): Session {
   const h = String(req.headers['authorization'] ?? '');
   const t = h.startsWith('Bearer ') ? h.slice(7).trim() : '';
   if (!t) throw new Error('invalid session');
   return getSession(t);
 }
+
+// Sponsor (gas) + sign (sender, via the held zkLogin key) + execute. The user
+// signs nothing client-side; this is the single custodial signing path.
+export async function sponsorExecute(s: Session, transactionKindBytes: string) {
+  const { bytes, digest } = await enoki.createSponsoredTransaction({
+    network: NETWORK,
+    transactionKindBytes,
+    sender: s.address,
+    allowedAddresses: [s.address],
+    ...(ALLOWED_TARGETS.length ? { allowedMoveCallTargets: ALLOWED_TARGETS } : {}),
+  });
+  const { signature: userSignature } = await s.kp.signTransaction(fromBase64(bytes));
+  const signature = getZkLoginSignature({ inputs: s.zkp, maxEpoch: s.maxEpoch, userSignature });
+  return enoki.executeSponsoredTransaction({ digest, signature });
+}
+
+// Build a server-constructed PTB and run it through the custodial signer.
+// onlyTransactionKind: Enoki provides gas; we only ship the command kind.
+export async function runTx(s: Session, tx: Transaction): Promise<{ digest: string }> {
+  tx.setSenderIfNotSet(s.address);
+  const kind = await tx.build({ client: sui as never, onlyTransactionKind: true });
+  return sponsorExecute(s, toBase64(kind));
+}
+
+export { sui, NETWORK };
 
 const app = Fastify({ logger: true });
 
@@ -120,20 +148,14 @@ app.get('/stats', async (req) => {
   return { address, network: NETWORK, sui: balance.balance, balances };
 });
 
-// Sponsor + sign (sender, server-side) + execute. Client signs nothing.
+// Escape hatch: client-built transaction kind, server-sponsored + signed.
 app.post<{ Body: { transactionKindBytes: string } }>('/tx', async (req) => {
   const s = authed(req);
-  const { bytes, digest } = await enoki.createSponsoredTransaction({
-    network: NETWORK,
-    transactionKindBytes: req.body.transactionKindBytes,
-    sender: s.address,
-    allowedAddresses: [s.address],
-    ...(ALLOWED_TARGETS.length ? { allowedMoveCallTargets: ALLOWED_TARGETS } : {}),
-  });
-  const { signature: userSignature } = await s.kp.signTransaction(fromBase64(bytes));
-  const signature = getZkLoginSignature({ inputs: s.zkp, maxEpoch: s.maxEpoch, userSignature });
-  return enoki.executeSponsoredTransaction({ digest, signature });
+  return sponsorExecute(s, req.body.transactionKindBytes);
 });
+
+registerPositionRoutes(app);
+registerOracleRoutes(app);
 
 if (import.meta.main) {
   app.listen({ port: PORT, host: '0.0.0.0' }).catch((e) => {
