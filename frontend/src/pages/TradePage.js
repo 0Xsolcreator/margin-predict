@@ -132,7 +132,7 @@ function TradePage() {
     setBusy(false);
   };
 
-  const onAuthed = addr => { setAddress(addr); setAuthOpen(false); };
+  const onAuthed = useCallback(addr => { setAddress(addr); setAuthOpen(false); }, []);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', width: '100vw', height: '100vh', background: '#0a0a0b', fontFamily: "'Space Grotesk',sans-serif", color: '#f4f4ef', overflow: 'hidden', userSelect: 'none' }}>

@@ -19,6 +19,7 @@
 
 import crypto from 'node:crypto';
 import Fastify from 'fastify';
+import cors from '@fastify/cors';
 import { EnokiClient, EnokiClientError } from '@mysten/enoki';
 import { SuiGrpcClient } from '@mysten/sui/grpc';
 import { Ed25519Keypair } from '@mysten/sui/keypairs/ed25519';
@@ -95,6 +96,11 @@ export async function runTx(s: Session, tx: Transaction): Promise<{ digest: stri
 export { sui, NETWORK };
 
 const app = Fastify({ logger: true });
+
+await app.register(cors, {
+  origin: process.env.CORS_ORIGIN ?? 'http://localhost:3000',
+  credentials: true,
+});
 
 app.setErrorHandler((err: Error, _req, reply) => {
   if (err instanceof EnokiClientError) return reply.code(err.status || 502).send({ error: err.message, errors: err.errors });
