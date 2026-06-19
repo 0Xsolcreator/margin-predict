@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=Outfit:wght@200;300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 100%; min-height: 100%; background: #0d0c0a; }
+</style>
+</helmet>
+
+<div style="min-height:100vh; width:100%; background:radial-gradient(120% 80% at 50% 0%, #1a160f 0%, #0d0c0a 55%); font-family:'Outfit',sans-serif; color:#e9e2d2; padding:64px 56px 88px; display:flex; flex-direction:column; align-items:center; gap:0">
+
+  <!-- header -->
+  <div style="width:100%; max-width:1040px; display:flex; align-items:center; justify-content:space-between; padding-bottom:30px; border-bottom:1px solid rgba(214,168,90,0.16); margin-bottom:72px">
+    <div style="font-family:'Outfit',sans-serif; font-weight:300; font-size:12px; letter-spacing:4px; color:#8a7a55; text-transform:uppercase">MetEngine · Identity</div>
+    <div style="font-family:'Cormorant Garamond',serif; font-style:italic; font-weight:400; font-size:15px; color:#9a8a62">an elegant refinement</div>
+  </div>
+
+  <!-- PRIMARY LOCKUP -->
+  <div style="display:flex; align-items:center; gap:34px; margin-bottom:24px">
+    <svg width="148" height="92" viewBox="0 0 200 124" fill="none" xmlns="http://www.w3.org/2000/svg" style="filter:drop-shadow(0 10px 30px rgba(200,150,60,0.22))">
+      <defs>
+        <linearGradient id="goldA" x1="40" y1="6" x2="170" y2="58" gradientUnits="userSpaceOnUse">
+          <stop offset="0" stop-color="#fbeec6"/>
+          <stop offset="0.42" stop-color="#e6bd6e"/>
+          <stop offset="1" stop-color="#b07e35"/>
+        </linearGradient>
+        <linearGradient id="goldB" x1="20" y1="64" x2="180" y2="120" gradientUnits="userSpaceOnUse">
+          <stop offset="0" stop-color="#f3d99a"/>
+          <stop offset="0.5" stop-color="#c79a4c"/>
+          <stop offset="1" stop-color="#8a5e28"/>
+        </linearGradient>
+        <linearGradient id="sheen" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stop-color="#fff6e0" stop-opacity="0.9"/>
+          <stop offset="1" stop-color="#fff6e0" stop-opacity="0"/>
+        </linearGradient>
+      </defs>
+      <!-- lower plate -->
+      <path d="M44 66 L196 66 L160 116 L8 116 Z" fill="url(#goldB)"/>
+      <path d="M44 66 L196 66 L193.5 69.4 L46.4 69.4 Z" fill="url(#sheen)" opacity="0.7"/>
+      <!-- upper plate -->
+      <path d="M48 8 L168 8 L140 52 L20 52 Z" fill="url(#goldA)"/>
+      <path d="M48 8 L168 8 L165.2 12 L50.8 12 Z" fill="url(#sheen)"/>
+    </svg>
+    <div style="display:flex; flex-direction:column; gap:2px">
+      <div style="font-family:'Cormorant Garamond',serif; font-weight:500; font-size:64px; line-height:0.92; letter-spacing:0.5px; background:linear-gradient(96deg,#fbeec6 0%,#e3b86a 48%,#b6843a 100%); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent">MetEngine</div>
+      <div style="font-family:'Outfit',sans-serif; font-weight:300; font-size:11px; letter-spacing:6px; color:#8a7a55; text-transform:uppercase; padding-left:3px">Forging Markets</div>
+    </div>
+  </div>
+
+  <div style="font-family:'Outfit',sans-serif; font-weight:300; font-size:11px; letter-spacing:3px; color:#5f5640; text-transform:uppercase; margin-bottom:80px">Primary lockup</div>
+
+  <!-- TREATMENTS GRID -->
+  <div style="width:100%; max-width:1040px; display:grid; grid-template-columns:repeat(2,1fr); gap:28px">
+
+    <!-- mark alone -->
+    <div style="background:linear-gradient(160deg,#161310,#100e0b); border:1px solid rgba(214,168,90,0.14); border-radius:14px; padding:44px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:30px; min-height:240px">
+      <svg width="120" height="74" viewBox="0 0 200 124" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M44 66 L196 66 L160 116 L8 116 Z" fill="url(#goldB)"/>
+        <path d="M48 8 L168 8 L140 52 L20 52 Z" fill="url(#goldA)"/>
+      </svg>
+      <span style="font-family:'Outfit',sans-serif; font-weight:300; font-size:10px; letter-spacing:3px; color:#6f6448; text-transform:uppercase">Logomark</span>
+    </div>
+
+    <!-- wordmark serif -->
+    <div style="background:linear-gradient(160deg,#161310,#100e0b); border:1px solid rgba(214,168,90,0.14); border-radius:14px; padding:44px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:30px; min-height:240px">
+      <div style="font-family:'Cormorant Garamond',serif; font-weight:500; font-size:48px; letter-spacing:0.5px; background:linear-gradient(96deg,#fbeec6,#e3b86a 50%,#b6843a); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent">MetEngine</div>
+      <span style="font-family:'Outfit',sans-serif; font-weight:300; font-size:10px; letter-spacing:3px; color:#6f6448; text-transform:uppercase">Wordmark · Serif</span>
+    </div>
+
+    <!-- wordmark sans -->
+    <div style="background:linear-gradient(160deg,#161310,#100e0b); border:1px solid rgba(214,168,90,0.14); border-radius:14px; padding:44px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:30px; min-height:240px">
+      <div style="display:flex; align-items:baseline; font-family:'Outfit',sans-serif; font-size:42px; letter-spacing:1px"><span style="font-weight:200; background:linear-gradient(96deg,#fbeec6,#e3b86a 60%,#c79248); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent">Met</span><span style="font-weight:500; background:linear-gradient(96deg,#e3b86a,#b6843a); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent">Engine</span></div>
+      <span style="font-family:'Outfit',sans-serif; font-weight:300; font-size:10px; letter-spacing:3px; color:#6f6448; text-transform:uppercase">Wordmark · Sans</span>
+    </div>
+
+    <!-- on light -->
+    <div style="background:linear-gradient(160deg,#f4eee0,#e7ddc6); border:1px solid rgba(0,0,0,0.06); border-radius:14px; padding:44px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:24px; min-height:240px">
+      <div style="display:flex; align-items:center; gap:18px">
+        <svg width="74" height="46" viewBox="0 0 200 124" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M44 66 L196 66 L160 116 L8 116 Z" fill="url(#goldB)"/>
+          <path d="M48 8 L168 8 L140 52 L20 52 Z" fill="url(#goldA)"/>
+        </svg>
+        <div style="font-family:'Cormorant Garamond',serif; font-weight:600; font-size:34px; color:#7a5424">MetEngine</div>
+      </div>
+      <span style="font-family:'Outfit',sans-serif; font-weight:400; font-size:10px; letter-spacing:3px; color:#a08653; text-transform:uppercase">On light</span>
+    </div>
+
+  </div>
+
+  <!-- small monoline / mono row -->
+  <div style="width:100%; max-width:1040px; display:flex; gap:28px; margin-top:28px">
+    <div style="flex:1; background:linear-gradient(160deg,#161310,#100e0b); border:1px solid rgba(214,168,90,0.14); border-radius:14px; padding:36px; display:flex; align-items:center; justify-content:center; gap:18px">
+      <svg width="40" height="25" viewBox="0 0 200 124" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M44 66 L196 66 L160 116 L8 116 Z" fill="#d8b063"/>
+        <path d="M48 8 L168 8 L140 52 L20 52 Z" fill="#f0d59a"/>
+      </svg>
+      <div style="font-family:'Cormorant Garamond',serif; font-weight:500; font-size:24px; color:#e3c082">MetEngine</div>
+    </div>
+    <div style="flex:1; background:linear-gradient(160deg,#161310,#100e0b); border:1px solid rgba(214,168,90,0.14); border-radius:14px; padding:36px; display:flex; align-items:center; justify-content:center; gap:18px">
+      <svg width="40" height="25" viewBox="0 0 200 124" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M44 66 L196 66 L160 116 L8 116 Z" fill="#5a5240" opacity="0.5"/>
+        <path d="M48 8 L168 8 L140 52 L20 52 Z" fill="#9a8a62"/>
+      </svg>
+      <div style="font-family:'Cormorant Garamond',serif; font-weight:500; font-size:24px; color:#9a8a62">MetEngine</div>
+    </div>
+  </div>
+
+</div>
+</x-dc>
+</body>
+</html>

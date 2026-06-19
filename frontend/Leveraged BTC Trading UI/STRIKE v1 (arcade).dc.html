@@ -1,0 +1,773 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 100%; height: 100%; overflow: hidden; background: #08080e; }
+  ::-webkit-scrollbar { width: 3px; height: 3px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: rgba(255,215,0,0.2); border-radius: 2px; }
+  input[type=range] { -webkit-appearance: none; appearance: none; }
+  input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; border-radius: 50%; background: #FFD700; cursor: pointer; box-shadow: 0 0 10px rgba(255,215,0,0.6); border: 2px solid #1a1505; }
+  input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+  input[type=number] { -moz-appearance: textfield; }
+  @keyframes orbPulse { 0%,100%{ box-shadow:0 0 0 0 rgba(34,197,94,0.5);} 50%{ box-shadow:0 0 0 5px rgba(34,197,94,0);} }
+  @keyframes warnPulse { 0%,100%{ opacity:1;} 50%{ opacity:0.45;} }
+  @keyframes scan { 0%{ transform: translateY(-100%);} 100%{ transform: translateY(100%);} }
+  .level-row { transition: background 0.08s; }
+  .level-row:hover { background: rgba(255,215,0,0.07) !important; cursor: pointer; }
+  .level-current { background: rgba(255,215,0,0.05) !important; }
+  .level-selected { background: rgba(255,215,0,0.12) !important; border-left-color: #FFD700 !important; }
+  .tab-btn { transition: all 0.15s; }
+  .tab-btn:hover { color: #aaa !important; }
+  .tab-active { color: #FFD700 !important; border-bottom-color: #FFD700 !important; }
+  .dir-btn { transition: all 0.12s; }
+  .dir-btn:hover { filter: brightness(1.25); }
+  .place-btn { transition: all 0.18s; }
+  .place-btn:hover { box-shadow: 0 6px 34px rgba(255,215,0,0.55) !important; transform: translateY(-1px); }
+  .place-btn:active { transform: translateY(1px); }
+  .pct-btn { transition: all 0.12s; }
+  .pct-btn:hover { background: rgba(255,215,0,0.08) !important; color: #FFD700 !important; border-color: rgba(255,215,0,0.3) !important; }
+  .wd-btn { transition: background 0.12s; }
+  .wd-btn:hover { background: rgba(255,215,0,0.2) !important; }
+  .cl-btn { transition: all 0.12s; }
+  .cl-btn:hover { border-color: rgba(239,68,68,0.4) !important; color: #ef4444 !important; }
+  .live-dot { animation: orbPulse 2s ease infinite; }
+</style>
+</helmet>
+
+<div style="display:flex; flex-direction:column; width:100vw; height:100vh; background:#08080e; font-family:'Space Mono', monospace; color:#e8e8f0; overflow:hidden; user-select:none">
+
+  <div style="flex-shrink:0; display:flex; align-items:center; height:58px; padding:0 18px; border-bottom:1px solid rgba(255,215,0,0.1); background:#09090f; gap:20px">
+
+    <div style="display:flex; align-items:center; gap:10px; flex-shrink:0">
+      <div style="width:30px; height:30px; background:linear-gradient(145deg,#FFD700,#e67e00); border-radius:7px; display:flex; align-items:center; justify-content:center; flex-shrink:0; box-shadow:0 0 16px rgba(255,215,0,0.3)">
+        <div style="width:11px; height:11px; background:#0a0a12; transform:rotate(45deg)"></div>
+      </div>
+      <span style="font:900 17px Orbitron,sans-serif; color:#FFD700; letter-spacing:4px">{{ appName }}</span>
+    </div>
+
+    <div style="width:1px; height:28px; background:rgba(255,215,0,0.1); flex-shrink:0"></div>
+
+    <div style="display:flex; align-items:center; gap:10px; flex-shrink:0">
+      <span style="font-size:9px; color:#555; letter-spacing:2px">BTC/USD</span>
+      <span style="font:700 20px Orbitron,sans-serif; color:#e8e8f0; letter-spacing:1px">{{ btcPriceFormatted }}</span>
+      <span style="font-size:10px; color:{{ changeColor }}; padding:3px 7px; background:{{ changeBg }}; border-radius:4px">{{ priceChangeFmt }}</span>
+    </div>
+
+    <div style="flex:1"></div>
+
+    <div style="font-size:9px; color:#666; background:rgba(255,255,255,0.04); padding:5px 10px; border-radius:5px; border:1px solid rgba(255,255,255,0.08); letter-spacing:1px; flex-shrink:0">SUI TESTNET</div>
+
+    <div style="display:flex; align-items:center; padding:7px 16px; background:rgba(255,107,0,0.07); border:1px solid rgba(255,107,0,0.22); border-radius:8px; flex-shrink:0">
+      <div>
+        <div style="font-size:8px; color:rgba(255,150,50,0.7); letter-spacing:2px; margin-bottom:2px">ORACLE EXPIRES IN</div>
+        <div style="font:700 16px Orbitron,sans-serif; color:#ff8c00; letter-spacing:3px">{{ oracleCountdown }}</div>
+      </div>
+    </div>
+
+    <div style="width:1px; height:28px; background:rgba(255,255,255,0.06); flex-shrink:0"></div>
+
+    <div style="display:flex; align-items:center; gap:10px; flex-shrink:0">
+      <div style="width:8px; height:8px; background:#22c55e; border-radius:50%" class="live-dot"></div>
+      <div>
+        <div style="font-size:8px; color:#555; letter-spacing:1px">BALANCE</div>
+        <div style="font:700 14px Orbitron,sans-serif; color:#e8e8f0">{{ balanceFormatted }} <span style="font-size:9px; color:#666">SUI</span></div>
+      </div>
+    </div>
+
+  </div>
+
+  <div style="flex:1; min-height:0; display:flex">
+
+    <div style="width:195px; flex-shrink:0; border-right:1px solid rgba(255,215,0,0.08); display:flex; flex-direction:column; background:#09090f">
+      <div style="display:flex; align-items:center; justify-content:space-between; padding:8px 12px; border-bottom:1px solid rgba(255,255,255,0.04); flex-shrink:0">
+        <span style="font-size:8px; color:#555; letter-spacing:2px">PRICE LEVELS</span>
+        <span style="font-size:8px; color:rgba(255,215,0,0.5)">±$50</span>
+      </div>
+      <div style="display:flex; padding:4px 12px 4px 16px; border-bottom:1px solid rgba(255,255,255,0.03); flex-shrink:0">
+        <span style="flex:1; font-size:7px; color:#3a3a48; letter-spacing:1px">LEVEL</span>
+        <span style="font-size:7px; color:#3a3a48; letter-spacing:1px">SENTIMENT</span>
+      </div>
+      <div ref="{{ ladderRef }}" style="flex:1; overflow-y:auto; overflow-x:hidden">
+        <sc-for list="{{ priceLevels }}" as="level" hint-placeholder-count="18">
+          <div onClick="{{ level.onClick }}" class="{{ level.rowClass }}" style="height:34px; display:flex; align-items:center; padding:0 12px 0 6px; gap:7px; border-left:2px solid transparent; position:relative">
+            <sc-if value="{{ level.isCurrent }}" hint-placeholder-val="{{ false }}">
+              <div style="position:absolute; left:0; top:0; bottom:0; width:2px; background:#FFD700"></div>
+              <div style="position:absolute; left:3px; top:50%; transform:translateY(-50%); width:0; height:0; border-top:3px solid transparent; border-bottom:3px solid transparent; border-left:4px solid #FFD700"></div>
+            </sc-if>
+            <span style="font:700 11px 'Space Mono',monospace; color:{{ level.priceColor }}; min-width:64px; padding-left:6px">{{ level.priceStr }}</span>
+            <div style="flex:1; height:5px; background:rgba(255,255,255,0.05); border-radius:3px; overflow:hidden">
+              <div style="width:{{ level.longPct }}%; height:100%; background:{{ level.barColor }}; transition:width 0.5s ease; border-radius:3px"></div>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+
+    <div style="flex:1; min-width:0; position:relative; overflow:hidden" ref="{{ containerRef }}">
+      <canvas ref="{{ chartRef }}" style="display:block; position:absolute; top:0; left:0; width:100%; height:100%"></canvas>
+      <div style="position:absolute; inset:0; pointer-events:none; background:repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.04) 2px, rgba(0,0,0,0.04) 3px); z-index:1"></div>
+      <div style="position:absolute; top:0; left:0; right:0; height:50px; background:linear-gradient(to bottom, rgba(8,8,14,0.5), transparent); pointer-events:none; z-index:2"></div>
+
+      <sc-if value="{{ hasSelection }}" hint-placeholder-val="{{ false }}">
+        <div style="position:absolute; top:14px; left:14px; display:flex; align-items:center; gap:10px; background:rgba(8,8,14,0.85); border:1px solid rgba(255,215,0,0.4); border-radius:8px; padding:7px 14px; backdrop-filter:blur(8px); z-index:3">
+          <div style="width:6px; height:6px; background:#FFD700; border-radius:50%"></div>
+          <span style="font-size:8px; color:rgba(255,215,0,0.6); letter-spacing:2px">TARGET</span>
+          <span style="font:700 14px Orbitron,sans-serif; color:#FFD700">{{ selectedPriceFmt }}</span>
+          <span style="font-size:9px; color:#666">{{ levelDistLabel }}</span>
+          <button onClick="{{ clearSelection }}" style="background:none; border:none; color:#555; cursor:pointer; font-size:14px; padding:0; margin-left:4px; line-height:1">×</button>
+        </div>
+      </sc-if>
+
+      <div style="position:absolute; bottom:12px; left:14px; display:flex; align-items:center; gap:10px; pointer-events:none; z-index:3">
+        <div style="display:flex; align-items:center; gap:5px">
+          <div style="width:22px; height:3px; background:linear-gradient(to right,#ef4444,#22c55e); border-radius:2px"></div>
+          <span style="font-size:8px; color:#444; letter-spacing:1px">SENTIMENT HEAT</span>
+        </div>
+        <span style="font-size:8px; color:#2a2a38">·</span>
+        <div style="display:flex; align-items:center; gap:5px">
+          <div style="width:14px; height:1px; background:rgba(255,107,0,0.5)"></div>
+          <span style="font-size:8px; color:#444; letter-spacing:1px">EXPIRY</span>
+        </div>
+      </div>
+    </div>
+
+    <div style="width:340px; flex-shrink:0; border-left:1px solid rgba(255,215,0,0.08); display:flex; flex-direction:column; background:#09090f">
+      <div style="flex-shrink:0; display:flex; border-bottom:1px solid rgba(255,215,0,0.08)">
+        <button onClick="{{ goToBet }}" class="{{ betTabClass }} tab-btn" style="flex:1; height:42px; background:none; border:none; border-bottom:2px solid transparent; cursor:pointer; font:700 9px 'Space Mono',monospace; color:#555; letter-spacing:2px">BET</button>
+        <button onClick="{{ goToPositions }}" class="{{ posTabClass }} tab-btn" style="flex:1; height:42px; background:none; border:none; border-bottom:2px solid transparent; cursor:pointer; font:700 9px 'Space Mono',monospace; color:#555; letter-spacing:2px">POS ({{ posCount }})</button>
+        <button onClick="{{ goToLeaders }}" class="{{ lbTabClass }} tab-btn" style="flex:1; height:42px; background:none; border:none; border-bottom:2px solid transparent; cursor:pointer; font:700 9px 'Space Mono',monospace; color:#555; letter-spacing:2px">ARENA</button>
+      </div>
+
+      <sc-if value="{{ isBetTab }}" hint-placeholder-val="{{ true }}">
+        <div style="flex:1; overflow-y:auto; padding:16px; display:flex; flex-direction:column; gap:14px">
+          <sc-if value="{{ noSelection }}" hint-placeholder-val="{{ false }}">
+            <div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:40px 20px; text-align:center; gap:14px; min-height:320px">
+              <div style="width:56px; height:56px; border:1px solid rgba(255,215,0,0.2); border-radius:50%; display:flex; align-items:center; justify-content:center">
+                <div style="width:14px; height:14px; border:1.5px solid rgba(255,215,0,0.45); border-radius:50%; position:relative">
+                  <div style="position:absolute; left:50%; top:50%; width:3px; height:3px; background:rgba(255,215,0,0.6); border-radius:50%; transform:translate(-50%,-50%)"></div>
+                </div>
+              </div>
+              <div>
+                <div style="font-size:10px; color:#555; letter-spacing:2px; margin-bottom:7px">SELECT A LEVEL</div>
+                <div style="font-size:9px; color:#3a3a48; line-height:1.8">Click any price level in the<br>ladder to open a position</div>
+              </div>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ hasSelection }}" hint-placeholder-val="{{ false }}">
+            <div style="background:rgba(255,215,0,0.05); border:1px solid rgba(255,215,0,0.18); border-radius:10px; padding:14px">
+              <div style="font-size:8px; color:rgba(255,215,0,0.5); letter-spacing:2px; margin-bottom:6px">TARGET PRICE</div>
+              <div style="font:900 26px Orbitron,sans-serif; color:#FFD700; letter-spacing:1px">{{ selectedPriceFmt }}</div>
+              <div style="font-size:9px; color:#666; margin-top:5px">{{ levelDistLabel }} · settles vs oracle</div>
+            </div>
+
+            <div style="display:flex; gap:8px">
+              <button onClick="{{ setLong }}" class="dir-btn" style="flex:1; height:46px; border-radius:8px; border:1px solid {{ longBorder }}; background:{{ longBg }}; cursor:pointer; font:700 11px 'Space Mono',monospace; color:{{ longColor }}; letter-spacing:2px">▲ LONG</button>
+              <button onClick="{{ setShort }}" class="dir-btn" style="flex:1; height:46px; border-radius:8px; border:1px solid {{ shortBorder }}; background:{{ shortBg }}; cursor:pointer; font:700 11px 'Space Mono',monospace; color:{{ shortColor }}; letter-spacing:2px">▼ SHORT</button>
+            </div>
+
+            <div>
+              <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:10px">
+                <span style="font-size:9px; color:#555; letter-spacing:2px">LEVERAGE</span>
+                <span style="font:700 20px Orbitron,sans-serif; color:#FFD700">{{ betLev }}<span style="font-size:13px; color:rgba(255,215,0,0.6)">×</span></span>
+              </div>
+              <input type="range" min="1" max="50" value="{{ betLev }}" onInput="{{ onLevChange }}" style="width:100%; height:4px; background:{{ leverageTrack }}; border-radius:2px; outline:none; cursor:pointer">
+              <div style="display:flex; justify-content:space-between; margin-top:6px">
+                <span style="font-size:8px; color:#3a3a48">1×</span>
+                <span style="font-size:8px; color:#3a3a48">10×</span>
+                <span style="font-size:8px; color:#3a3a48">25×</span>
+                <span style="font-size:8px; color:#3a3a48">50×</span>
+              </div>
+            </div>
+
+            <div>
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px">
+                <span style="font-size:9px; color:#555; letter-spacing:2px">AMOUNT</span>
+                <span style="font-size:8px; color:#444">BAL {{ balanceFormatted }} SUI</span>
+              </div>
+              <div style="position:relative">
+                <input type="number" value="{{ betAmt }}" onInput="{{ onAmtChange }}" style="width:100%; height:46px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:8px; color:#e8e8f0; font:700 18px Orbitron,sans-serif; padding:0 50px 0 14px; outline:none">
+                <span style="position:absolute; right:14px; top:50%; transform:translateY(-50%); font-size:10px; color:#555">SUI</span>
+              </div>
+              <div style="display:flex; gap:6px; margin-top:7px">
+                <button onClick="{{ bet25 }}" class="pct-btn" style="flex:1; height:27px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.07); border-radius:5px; cursor:pointer; font:700 9px 'Space Mono',monospace; color:#555">25%</button>
+                <button onClick="{{ bet50 }}" class="pct-btn" style="flex:1; height:27px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.07); border-radius:5px; cursor:pointer; font:700 9px 'Space Mono',monospace; color:#555">50%</button>
+                <button onClick="{{ bet75 }}" class="pct-btn" style="flex:1; height:27px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.07); border-radius:5px; cursor:pointer; font:700 9px 'Space Mono',monospace; color:#555">75%</button>
+                <button onClick="{{ betMax }}" class="pct-btn" style="flex:1; height:27px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,215,0,0.2); border-radius:5px; cursor:pointer; font:700 9px 'Space Mono',monospace; color:rgba(255,215,0,0.7)">MAX</button>
+              </div>
+            </div>
+
+            <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.05); border-radius:8px; padding:12px; display:flex; flex-direction:column; gap:9px">
+              <div style="display:flex; justify-content:space-between">
+                <span style="font-size:9px; color:#555">Notional exposure</span>
+                <span style="font:700 10px 'Space Mono',monospace; color:#999">{{ notionalFmt }} SUI</span>
+              </div>
+              <div style="display:flex; justify-content:space-between">
+                <span style="font-size:9px; color:#555">Liquidation price</span>
+                <span style="font:700 10px 'Space Mono',monospace; color:#ef4444">{{ liqFmt }}</span>
+              </div>
+              <div style="height:1px; background:rgba(255,255,255,0.04)"></div>
+              <div style="display:flex; justify-content:space-between">
+                <span style="font-size:9px; color:#555">Est. payout if hit</span>
+                <span style="font:700 10px 'Space Mono',monospace; color:#22c55e">+{{ estimatedPnlFmt }} SUI</span>
+              </div>
+            </div>
+
+            <button onClick="{{ placeBet }}" class="place-btn" style="width:100%; height:52px; background:linear-gradient(135deg,#FFD700 0%,#e67e00 100%); border:none; border-radius:10px; cursor:pointer; font:900 13px Orbitron,sans-serif; color:#1a1505; letter-spacing:4px; box-shadow:0 4px 24px rgba(255,215,0,0.25)">PLACE BET</button>
+          </sc-if>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isPosTab }}" hint-placeholder-val="{{ false }}">
+        <div style="flex:1; overflow-y:auto; padding:12px; display:flex; flex-direction:column; gap:8px">
+          <sc-if value="{{ noPositions }}" hint-placeholder-val="{{ false }}">
+            <div style="padding:50px 20px; text-align:center">
+              <div style="font-size:10px; color:#3a3a48; letter-spacing:2px">NO OPEN POSITIONS</div>
+              <div style="font-size:9px; color:#2a2a38; margin-top:8px">Place a bet to see it here</div>
+            </div>
+          </sc-if>
+          <sc-for list="{{ positions }}" as="pos" hint-placeholder-count="0">
+            <div style="background:rgba(255,255,255,0.02); border:1px solid {{ pos.borderClr }}; border-radius:10px; padding:12px">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px">
+                <div style="display:flex; align-items:center; gap:8px">
+                  <span style="background:{{ pos.dirBg }}; color:{{ pos.dirClr }}; font:700 9px 'Space Mono',monospace; padding:3px 8px; border-radius:4px; letter-spacing:2px">{{ pos.dirTxt }}</span>
+                  <span style="font:700 11px Orbitron,sans-serif; color:#666">{{ pos.levTxt }}</span>
+                  <span style="font-size:8px; color:#444">@ {{ pos.targetTxt }}</span>
+                </div>
+                <span style="font:700 13px Orbitron,sans-serif; color:{{ pos.pnlClr }}">{{ pos.pnlTxt }}</span>
+              </div>
+              <div style="display:flex; justify-content:space-between; margin-bottom:10px">
+                <div>
+                  <div style="font-size:7px; color:#3a3a48; letter-spacing:1px; margin-bottom:2px">ENTRY</div>
+                  <div style="font:700 11px 'Space Mono',monospace; color:#777">{{ pos.entryTxt }}</div>
+                </div>
+                <div style="text-align:center">
+                  <div style="font-size:7px; color:#3a3a48; letter-spacing:1px; margin-bottom:2px">STAKE</div>
+                  <div style="font:700 11px 'Space Mono',monospace; color:#777">{{ pos.stakeTxt }}</div>
+                </div>
+                <div style="text-align:right">
+                  <div style="font-size:7px; color:#3a3a48; letter-spacing:1px; margin-bottom:2px">LIQ PRICE</div>
+                  <div style="font:700 11px 'Space Mono',monospace; color:#ef4444">{{ pos.liqTxt }}</div>
+                </div>
+              </div>
+              <div style="margin-bottom:10px">
+                <div style="display:flex; justify-content:space-between; margin-bottom:4px">
+                  <span style="font-size:7px; color:#3a3a48; letter-spacing:1px">MARGIN HEALTH</span>
+                  <span style="font-size:8px; color:{{ pos.hpClr }}">{{ pos.hpTxt }}%</span>
+                </div>
+                <div style="height:5px; background:rgba(255,255,255,0.05); border-radius:3px; overflow:hidden">
+                  <div style="width:{{ pos.hpPct }}%; height:100%; background:{{ pos.hpBarClr }}; border-radius:3px; transition:width 0.3s, background 0.3s"></div>
+                </div>
+              </div>
+              <div style="display:flex; gap:6px">
+                <button onClick="{{ pos.doWithdraw }}" class="wd-btn" style="flex:1; height:30px; background:rgba(255,215,0,0.08); border:1px solid rgba(255,215,0,0.25); border-radius:6px; cursor:pointer; font:700 8px 'Space Mono',monospace; color:#FFD700; letter-spacing:2px">WITHDRAW {{ pos.withdrawTxt }}</button>
+                <button onClick="{{ pos.doClose }}" class="cl-btn" style="height:30px; padding:0 14px; background:none; border:1px solid rgba(255,255,255,0.07); border-radius:6px; cursor:pointer; font:700 8px 'Space Mono',monospace; color:#555; letter-spacing:2px">CLOSE</button>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isLbTab }}" hint-placeholder-val="{{ false }}">
+        <div style="flex:1; overflow-y:auto; padding:16px">
+          <div style="font-size:8px; color:#555; letter-spacing:3px; margin-bottom:16px">TOP TRADERS — THIS ORACLE</div>
+          <sc-for list="{{ leaderboard }}" as="t" hint-placeholder-count="5">
+            <div style="display:flex; align-items:center; gap:10px; padding:10px 0; border-bottom:1px solid rgba(255,255,255,0.04)">
+              <div style="width:18px; font:700 11px Orbitron,sans-serif; color:{{ t.rankClr }}; flex-shrink:0">{{ t.rank }}</div>
+              <div style="width:18px; font-size:14px; flex-shrink:0; text-align:center">{{ t.medal }}</div>
+              <div style="flex:1; min-width:0">
+                <div style="font:700 11px 'Space Mono',monospace; color:#e8e8f0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap">{{ t.name }}</div>
+                <div style="font-size:8px; color:#444; margin-top:2px">{{ t.trades }} trades · {{ t.win }} win</div>
+              </div>
+              <div style="text-align:right; flex-shrink:0">
+                <div style="font:700 11px Orbitron,sans-serif; color:#22c55e">+{{ t.pnl }}</div>
+                <div style="font-size:8px; color:#3a3a48; margin-top:2px">SUI</div>
+              </div>
+            </div>
+          </sc-for>
+          <div style="height:1px; background:rgba(255,215,0,0.1); margin:16px 0; position:relative">
+            <span style="position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); background:#09090f; padding:0 8px; font-size:8px; color:#555; letter-spacing:2px">YOUR RANK</span>
+          </div>
+          <div style="display:flex; align-items:center; gap:10px; padding:10px 12px; background:rgba(255,215,0,0.05); border:1px solid rgba(255,215,0,0.15); border-radius:8px">
+            <div style="width:18px; font:700 11px Orbitron,sans-serif; color:#FFD700">47</div>
+            <div style="width:18px; font-size:14px; text-align:center">⚡</div>
+            <div style="flex:1">
+              <div style="font:700 11px 'Space Mono',monospace; color:#FFD700">YOU</div>
+              <div style="font-size:8px; color:#555; margin-top:2px">{{ posCount }} open positions</div>
+            </div>
+            <div style="text-align:right">
+              <div style="font:700 11px Orbitron,sans-serif; color:{{ userPnlClr }}">{{ userPnlTxt }}</div>
+              <div style="font-size:8px; color:#3a3a48; margin-top:2px">SUI</div>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+    </div>
+
+  </div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1440,&quot;height&quot;:900},&quot;appName&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;STRIKE&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;startBalance&quot;:{&quot;editor&quot;:&quot;float&quot;,&quot;default&quot;:2500,&quot;min&quot;:100,&quot;max&quot;:100000,&quot;tsType&quot;:&quot;number&quot;},&quot;oracleHours&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:3,&quot;min&quot;:1,&quot;max&quot;:24,&quot;tsType&quot;:&quot;number&quot;}}">
+class Component extends DCLogic {
+  chartRef = React.createRef();
+  containerRef = React.createRef();
+  ladderRef = React.createRef();
+
+  allLevels = {};
+  simInterval = null;
+  resizeObs = null;
+  _price = 105432;
+  _prev = 105432;
+  _start = 105432;
+
+  state = {
+    btcPrice: 105432,
+    candles: [],
+    cOpen: 105432,
+    cHigh: 105432,
+    cLow: 105432,
+    cTime: 0,
+    sel: null,
+    dir: 'long',
+    lev: 10,
+    amt: 50,
+    positions: [],
+    balance: 2500,
+    exp: 0,
+    tab: 'bet',
+    tick: 0,
+  };
+
+  componentDidMount() {
+    const startBal = this.props.startBalance ?? 2500;
+    const hours = this.props.oracleHours ?? 3;
+    this.setState({ balance: startBal, amt: Math.min(50, startBal), exp: Date.now() + hours * 3600000, cTime: Date.now() });
+    this._initLevels();
+    this._initHistory();
+    this._setupCanvas();
+    this._startSim();
+  }
+
+  componentWillUnmount() {
+    if (this.simInterval) clearInterval(this.simInterval);
+    if (this.resizeObs) this.resizeObs.disconnect();
+  }
+
+  _initLevels() {
+    const base = Math.round(this._price);
+    for (let i = -300; i <= 300; i++) {
+      this.allLevels[base + i] = { l: Math.random() * 700 + 100, s: Math.random() * 700 + 100 };
+    }
+  }
+
+  _initHistory() {
+    let p = this._price;
+    const cs = [];
+    for (let i = 79; i >= 1; i--) {
+      const o = p;
+      p += (Math.random() - 0.47) * 110;
+      const c = p;
+      cs.push({ o, c, h: Math.max(o, c) + Math.random() * 55, l: Math.min(o, c) - Math.random() * 55 });
+    }
+    this._start = cs[0].o;
+    this._price = p;
+    this._prev = p;
+    this.setState({ candles: cs, btcPrice: p, cOpen: p, cHigh: p, cLow: p });
+  }
+
+  _setupCanvas() {
+    const cont = this.containerRef.current;
+    const canvas = this.chartRef.current;
+    if (!cont || !canvas) return;
+    const resize = () => {
+      canvas.width = cont.clientWidth;
+      canvas.height = cont.clientHeight;
+      this._draw();
+    };
+    resize();
+    this.resizeObs = new ResizeObserver(resize);
+    this.resizeObs.observe(cont);
+    setTimeout(() => this._centerLadder(), 120);
+  }
+
+  _centerLadder() {
+    const lad = this.ladderRef.current;
+    if (lad) lad.scrollTop = 50 * 34 - lad.clientHeight / 2 + 17;
+  }
+
+  _startSim() {
+    const CLEN = 4000;
+    this.simInterval = setInterval(() => {
+      const oldBase = Math.round(this._price);
+      const d = (Math.random() - 0.487) * 38;
+      const np = this._price + d;
+      const now = Date.now();
+      const { candles, cOpen, cHigh, cLow, cTime } = this.state;
+
+      let nc = candles, no = cOpen, nh = cHigh, nl = cLow, nt = cTime;
+      if (now - cTime > CLEN) {
+        nc = [...candles, { o: cOpen, c: this._prev, h: cHigh, l: cLow }];
+        if (nc.length > 80) nc = nc.slice(-80);
+        no = np; nh = np; nl = np; nt = now;
+      } else {
+        nh = Math.max(cHigh, np);
+        nl = Math.min(cLow, np);
+      }
+
+      this._prev = np;
+      this._price = np;
+
+      const base = Math.round(np);
+      for (let i = -8; i <= 8; i++) {
+        const k = base + i;
+        if (!this.allLevels[k]) this.allLevels[k] = { l: 200, s: 200 };
+        this.allLevels[k].l = Math.max(10, this.allLevels[k].l + (Math.random() - 0.48) * 7);
+        this.allLevels[k].s = Math.max(10, this.allLevels[k].s + (Math.random() - 0.52) * 7);
+      }
+
+      const upos = this.state.positions.map(p => {
+        const diff = np - p.e;
+        const m = p.d === 'long' ? 1 : -1;
+        const pPct = (diff / p.e) * p.l * m;
+        const pnl = p.i * pPct;
+        const hp = Math.max(0, Math.min(100, 100 + pPct * 100));
+        return { ...p, pnl, hp };
+      }).filter(p => p.hp > 0);
+
+      if (Math.round(np) !== oldBase) {
+        requestAnimationFrame(() => this._centerLadder());
+      }
+
+      this.setState({
+        btcPrice: np, candles: nc, cOpen: no, cHigh: nh, cLow: nl, cTime: nt,
+        positions: upos, tick: (this.state.tick + 1) % 9999,
+      });
+      this._draw();
+    }, 300);
+  }
+
+  _draw() {
+    const canvas = this.chartRef.current;
+    if (!canvas || !canvas.width || !canvas.height) return;
+    const ctx = canvas.getContext('2d');
+    const W = canvas.width, H = canvas.height;
+    const { candles, cOpen, cHigh, cLow, sel, positions } = this.state;
+    const price = this._price;
+
+    const all = [...candles, { o: cOpen, c: price, h: Math.max(cHigh, price), l: Math.min(cLow, price) }];
+    ctx.fillStyle = '#08080e';
+    ctx.fillRect(0, 0, W, H);
+    if (all.length < 2) return;
+
+    const prices = all.flatMap(c => [c.h, c.l]);
+    const minP = Math.min(...prices), maxP = Math.max(...prices);
+    const pad = (maxP - minP) * 0.12 + 25;
+    const vMin = minP - pad, vMax = maxP + pad;
+    const range = vMax - vMin;
+
+    const LBL = 76;
+    const cW = W - LBL;
+    const py = p => H - ((p - vMin) / range) * H;
+    const bw = Math.max(2, (cW / all.length) * 0.72);
+    const cx = i => (i / all.length) * cW + (cW / all.length) * 0.14;
+
+    // heat map
+    const base = Math.round(price);
+    for (let i = -150; i <= 150; i++) {
+      const lp = base + i;
+      if (lp < vMin || lp > vMax) continue;
+      const lev = this.allLevels[lp];
+      if (!lev) continue;
+      const tot = lev.l + lev.s;
+      const lr = lev.l / tot;
+      const a = Math.min(tot / 1200, 1) * 0.2;
+      const y1 = py(lp + 0.5), y2 = py(lp - 0.5);
+      const bh = Math.max(1, Math.abs(y2 - y1));
+      ctx.fillStyle = lr > 0.52 ? 'rgba(34,197,94,' + a + ')' : lr < 0.48 ? 'rgba(239,68,68,' + a + ')' : 'rgba(255,215,0,' + (a * 0.4) + ')';
+      ctx.fillRect(0, y1, cW, bh);
+    }
+
+    // grid
+    ctx.strokeStyle = 'rgba(255,255,255,0.025)';
+    ctx.lineWidth = 1;
+    for (let i = 1; i < 9; i++) {
+      const y = H / 9 * i;
+      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(cW, y); ctx.stroke();
+    }
+
+    // price axis
+    ctx.fillStyle = 'rgba(255,255,255,0.22)';
+    ctx.font = "9px 'Space Mono', monospace";
+    ctx.textAlign = 'right';
+    ctx.textBaseline = 'middle';
+    for (let i = 0; i <= 8; i++) {
+      const y = H / 8 * i;
+      const lp = vMax - range * (y / H);
+      ctx.fillText('$' + Math.round(lp).toLocaleString(), W - 3, y);
+    }
+    ctx.textBaseline = 'alphabetic';
+
+    // selected level
+    if (sel != null && sel >= vMin && sel <= vMax) {
+      const y = py(sel);
+      ctx.strokeStyle = 'rgba(255,215,0,0.6)';
+      ctx.lineWidth = 1.5;
+      ctx.setLineDash([6, 4]);
+      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(cW, y); ctx.stroke();
+      ctx.setLineDash([]);
+    }
+
+    // candles
+    all.forEach((c, i) => {
+      const x = cx(i);
+      const oy = py(c.o), cy = py(c.c), hy = py(c.h), ly = py(c.l);
+      const bull = c.c >= c.o;
+      const last = i === all.length - 1;
+      const col = bull ? '#22c55e' : '#ef4444';
+      ctx.strokeStyle = bull ? 'rgba(34,197,94,0.45)' : 'rgba(239,68,68,0.45)';
+      ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(x + bw / 2, hy); ctx.lineTo(x + bw / 2, ly); ctx.stroke();
+      const top = Math.min(oy, cy), bh = Math.max(1, Math.abs(cy - oy));
+      if (last) { ctx.shadowColor = col; ctx.shadowBlur = 7; }
+      ctx.fillStyle = col;
+      ctx.fillRect(x, top, bw, bh);
+      ctx.shadowBlur = 0;
+    });
+
+    // current price line
+    const cpy = py(price);
+    ctx.strokeStyle = 'rgba(255,255,255,0.5)';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([3, 4]);
+    ctx.beginPath(); ctx.moveTo(0, cpy); ctx.lineTo(cW, cpy); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = 'rgba(255,255,255,0.12)';
+    ctx.fillRect(cW, cpy - 11, LBL, 22);
+    ctx.fillStyle = '#fff';
+    ctx.font = "bold 10px 'Space Mono', monospace";
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('$' + Math.round(price).toLocaleString(), cW + 4, cpy);
+    ctx.textBaseline = 'alphabetic';
+
+    // positions
+    positions.forEach(pos => {
+      if (pos.e < vMin || pos.e > vMax) return;
+      const y = py(pos.e);
+      ctx.strokeStyle = pos.d === 'long' ? 'rgba(34,197,94,0.3)' : 'rgba(239,68,68,0.3)';
+      ctx.lineWidth = 1;
+      ctx.setLineDash([3, 6]);
+      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(cW * 0.4, y); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = pos.d === 'long' ? '#22c55e' : '#ef4444';
+      ctx.font = "bold 8px 'Space Mono', monospace";
+      ctx.textAlign = 'left';
+      ctx.fillText(pos.d.toUpperCase() + ' ' + pos.l + 'x', 6, y - 3);
+    });
+
+    // oracle expiry marker
+    const ex = cW * 0.88;
+    ctx.strokeStyle = 'rgba(255,107,0,0.22)';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([4, 4]);
+    ctx.beginPath(); ctx.moveTo(ex, 0); ctx.lineTo(ex, H); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = 'rgba(255,107,0,0.45)';
+    ctx.font = "8px 'Space Mono', monospace";
+    ctx.textAlign = 'left';
+    ctx.fillText('EXPIRY', ex + 4, 12);
+  }
+
+  _selectLevel(p) { this.setState({ sel: p, tab: 'bet' }); }
+  _clearSel() { this.setState({ sel: null }); }
+  _setLong() { this.setState({ dir: 'long' }); }
+  _setShort() { this.setState({ dir: 'short' }); }
+  _onLev(e) { this.setState({ lev: parseInt(e.target.value) }); }
+  _onAmt(e) { this.setState({ amt: parseFloat(e.target.value) || 0 }); }
+  _bet25() { this.setState(s => ({ amt: Math.floor(s.balance * 0.25) })); }
+  _bet50() { this.setState(s => ({ amt: Math.floor(s.balance * 0.50) })); }
+  _bet75() { this.setState(s => ({ amt: Math.floor(s.balance * 0.75) })); }
+  _betMax() { this.setState(s => ({ amt: Math.floor(s.balance) })); }
+
+  _placeBet() {
+    const { sel, dir, lev, amt, balance } = this.state;
+    if (sel == null || amt <= 0 || amt > balance) return;
+    const e = this._price;
+    const liq = dir === 'long' ? e * (1 - 1 / lev) : e * (1 + 1 / lev);
+    const pos = { id: Date.now(), e, t: sel, d: dir, l: lev, i: amt, liq, pnl: 0, hp: 100 };
+    this.setState(s => ({
+      positions: [...s.positions, pos],
+      balance: Math.round((s.balance - amt) * 100) / 100,
+      sel: null, tab: 'positions',
+    }));
+  }
+
+  _withdraw(id) {
+    const pos = this.state.positions.find(p => p.id === id);
+    if (!pos) return;
+    const amt = Math.max(0, pos.i + pos.pnl);
+    this.setState(s => ({
+      positions: s.positions.filter(p => p.id !== id),
+      balance: Math.round((s.balance + amt) * 100) / 100,
+    }));
+  }
+
+  renderVals() {
+    const { candles, sel, dir, lev, amt, positions, balance, exp, tab } = this.state;
+    const price = this._price;
+
+    const ms = Math.max(0, exp - Date.now());
+    const h = String(Math.floor(ms / 3600000)).padStart(2, '0');
+    const m = String(Math.floor((ms % 3600000) / 60000)).padStart(2, '0');
+    const s = String(Math.floor((ms % 60000) / 1000)).padStart(2, '0');
+    const oracleCountdown = ms <= 0 ? 'EXPIRED' : h + ':' + m + ':' + s;
+
+    const chg = price - this._start;
+    const chgPct = this._start ? (chg / this._start * 100) : 0;
+    const up = chg >= 0;
+
+    const base = Math.round(price);
+    const priceLevels = [];
+    for (let i = 50; i >= -50; i--) {
+      const p = base + i;
+      const lv = this.allLevels[p] || { l: 300, s: 300 };
+      const tot = lv.l + lv.s;
+      const lr = tot ? lv.l / tot : 0.5;
+      const isCur = i === 0;
+      const isSel = sel === p;
+      priceLevels.push({
+        priceStr: '$' + p.toLocaleString(),
+        isCurrent: isCur,
+        priceColor: isCur || isSel ? '#FFD700' : '#d8d8e0',
+        longPct: Math.round(lr * 100),
+        barColor: lr > 0.55 ? '#22c55e' : lr < 0.45 ? '#ef4444' : '#777',
+        rowClass: 'level-row' + (isCur ? ' level-current' : '') + (isSel ? ' level-selected' : ''),
+        onClick: () => this._selectLevel(p),
+      });
+    }
+
+    const selFmt = sel != null ? '$' + sel.toLocaleString() : '';
+    const dist = sel != null ? sel - Math.round(price) : 0;
+    const distLabel = dist > 0 ? '+$' + dist + ' above spot' : dist < 0 ? '-$' + Math.abs(dist) + ' below spot' : 'at spot price';
+
+    const isLong = dir === 'long';
+    const notional = amt * lev;
+    const liqPrice = isLong ? price * (1 - 1 / lev) : price * (1 + 1 / lev);
+    const pd = sel != null ? Math.abs(sel - price) : 0;
+    const estPnl = pd ? (amt * lev * pd / price) : 0;
+    const levPct = ((lev - 1) / 49 * 100).toFixed(1);
+
+    const posItems = positions.map(pos => {
+      const liqOk = pos.hp > 25;
+      return {
+        dirTxt: pos.d.toUpperCase(),
+        levTxt: pos.l + '×',
+        targetTxt: '$' + Math.round(pos.t).toLocaleString(),
+        dirBg: pos.d === 'long' ? 'rgba(34,197,94,0.12)' : 'rgba(239,68,68,0.12)',
+        dirClr: pos.d === 'long' ? '#22c55e' : '#ef4444',
+        pnlTxt: (pos.pnl >= 0 ? '+' : '') + pos.pnl.toFixed(2),
+        pnlClr: pos.pnl >= 0 ? '#22c55e' : '#ef4444',
+        entryTxt: '$' + Math.round(pos.e).toLocaleString(),
+        stakeTxt: pos.i.toFixed(0) + ' SUI',
+        liqTxt: '$' + Math.round(pos.liq).toLocaleString(),
+        hpTxt: Math.round(pos.hp),
+        hpPct: pos.hp.toFixed(1),
+        hpClr: pos.hp > 50 ? '#22c55e' : pos.hp > 25 ? '#FFD700' : '#ef4444',
+        hpBarClr: pos.hp > 50 ? '#22c55e' : pos.hp > 25 ? '#FFD700' : '#ef4444',
+        borderClr: liqOk ? 'rgba(255,255,255,0.06)' : 'rgba(239,68,68,0.3)',
+        withdrawTxt: (Math.max(0, pos.i + pos.pnl)).toFixed(0),
+        doWithdraw: () => this._withdraw(pos.id),
+        doClose: () => this._withdraw(pos.id),
+      };
+    });
+
+    const userPnl = positions.reduce((a, p) => a + p.pnl, 0);
+
+    return {
+      appName: this.props.appName ?? 'STRIKE',
+      btcPriceFormatted: '$' + Math.round(price).toLocaleString(),
+      changeColor: up ? '#22c55e' : '#ef4444',
+      changeBg: up ? 'rgba(34,197,94,0.12)' : 'rgba(239,68,68,0.12)',
+      priceChangeFmt: (up ? '+' : '') + chg.toFixed(0) + ' (' + (chgPct >= 0 ? '+' : '') + chgPct.toFixed(2) + '%)',
+      oracleCountdown,
+      balanceFormatted: balance.toFixed(0),
+
+      priceLevels,
+      ladderRef: this.ladderRef,
+      containerRef: this.containerRef,
+      chartRef: this.chartRef,
+
+      selectedPriceFmt: selFmt,
+      levelDistLabel: distLabel,
+      hasSelection: sel != null,
+      noSelection: sel == null,
+      clearSelection: () => this._clearSel(),
+
+      betLev: lev,
+      betAmt: amt,
+      leverageTrack: 'linear-gradient(to right, #FFD700 ' + levPct + '%, rgba(255,255,255,0.08) ' + levPct + '%)',
+      longBorder: isLong ? 'rgba(34,197,94,0.5)' : 'rgba(255,255,255,0.08)',
+      longBg: isLong ? 'rgba(34,197,94,0.12)' : 'rgba(255,255,255,0.03)',
+      longColor: isLong ? '#22c55e' : '#555',
+      shortBorder: !isLong ? 'rgba(239,68,68,0.5)' : 'rgba(255,255,255,0.08)',
+      shortBg: !isLong ? 'rgba(239,68,68,0.12)' : 'rgba(255,255,255,0.03)',
+      shortColor: !isLong ? '#ef4444' : '#555',
+      notionalFmt: notional.toFixed(0),
+      liqFmt: '$' + Math.round(liqPrice).toLocaleString(),
+      estimatedPnlFmt: estPnl.toFixed(2),
+
+      setLong: () => this._setLong(),
+      setShort: () => this._setShort(),
+      onLevChange: e => this._onLev(e),
+      onAmtChange: e => this._onAmt(e),
+      bet25: () => this._bet25(),
+      bet50: () => this._bet50(),
+      bet75: () => this._bet75(),
+      betMax: () => this._betMax(),
+      placeBet: () => this._placeBet(),
+
+      positions: posItems,
+      posCount: positions.length,
+      noPositions: posItems.length === 0,
+
+      isBetTab: tab === 'bet',
+      isPosTab: tab === 'positions',
+      isLbTab: tab === 'leaderboard',
+      betTabClass: tab === 'bet' ? 'tab-active' : '',
+      posTabClass: tab === 'positions' ? 'tab-active' : '',
+      lbTabClass: tab === 'leaderboard' ? 'tab-active' : '',
+      goToBet: () => this.setState({ tab: 'bet' }),
+      goToPositions: () => this.setState({ tab: 'positions' }),
+      goToLeaders: () => this.setState({ tab: 'leaderboard' }),
+
+      leaderboard: [
+        { rank: '01', medal: '🥇', name: 'APEX_BULL', trades: 234, win: '76%', pnl: '48,234', rankClr: '#FFD700' },
+        { rank: '02', medal: '🥈', name: 'PRICEWHALE', trades: 187, win: '71%', pnl: '31,820', rankClr: '#aaa' },
+        { rank: '03', medal: '🥉', name: 'SUI_BEAST', trades: 156, win: '68%', pnl: '24,150', rankClr: '#cd7f32' },
+        { rank: '04', medal: '', name: 'NEON_SHORT', trades: 203, win: '64%', pnl: '18,900', rankClr: '#555' },
+        { rank: '05', medal: '', name: 'CRYPTONAUT', trades: 98, win: '61%', pnl: '15,420', rankClr: '#555' },
+        { rank: '06', medal: '', name: 'ORACLE_REX', trades: 145, win: '59%', pnl: '12,800', rankClr: '#555' },
+        { rank: '07', medal: '', name: 'BULL_LASER', trades: 77, win: '58%', pnl: '9,340', rankClr: '#555' },
+      ],
+      userPnlClr: userPnl >= 0 ? '#22c55e' : '#ef4444',
+      userPnlTxt: (userPnl >= 0 ? '+' : '') + userPnl.toFixed(2),
+    };
+  }
+}
+</script>
+</body>
+</html>
