@@ -164,6 +164,7 @@ function TradePage() {
           step={tickUsd || 1}
           selectedStrike={selectedStrike}
           onSelectStrike={selectStrike}
+          loading={pythPrice == null}
         />
 
         <RightPanel tab={tab} onTab={setTab} posCount={positions.length}>

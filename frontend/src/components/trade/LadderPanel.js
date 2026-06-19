@@ -4,7 +4,7 @@ import { C } from './theme';
 // Price ladder: ±50 levels around spot, stepped by the market's tick size.
 // ponytail: probabilities are a one-time random seed per level — static is fine
 // for the design; replace with pool sizes from chain when wired.
-function LadderPanel({ currentPrice = 105432, step = 1, selectedStrike = null, onSelectStrike }) {
+function LadderPanel({ currentPrice = 105432, step = 1, selectedStrike = null, onSelectStrike, loading = false }) {
   const ref = useRef(null);
   const base = Math.round(currentPrice / step) * step;
   const dec = step < 1 ? Math.min(6, Math.ceil(-Math.log10(step))) : 0;
@@ -33,7 +33,14 @@ function LadderPanel({ currentPrice = 105432, step = 1, selectedStrike = null, o
         <span style={{ fontSize: 9, color: C.ghost }}>±50</span>
       </div>
       <div ref={ref} style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden' }}>
-        {levels.map(({ p, lr, isCurrent }) => {
+        {loading ? (
+          Array.from({ length: 22 }, (_, i) => (
+            <div key={i} style={{ height: 31, display: 'flex', alignItems: 'center', gap: 9, padding: '0 13px' }}>
+              <div className="sk" style={{ width: 44, height: 10, borderRadius: 4 }} />
+              <div className="sk" style={{ flex: 1, height: 6, borderRadius: 3, opacity: 0.5 + 0.5 * Math.sin((i / 21) * Math.PI) }} />
+            </div>
+          ))
+        ) : levels.map(({ p, lr, isCurrent }) => {
           const isSel = selectedStrike === p;
           const cls = 'lv-row' + (isCurrent ? ' lv-current' : '') + (isSel ? ' lv-selected' : '');
           const clr = isCurrent || isSel ? C.lime : C.dim;
