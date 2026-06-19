@@ -4,9 +4,10 @@ import { C, FONT, FONT_PIXEL } from './theme';
 // picked, then direction / leverage / stake / summary. onPlaceBet is a stub.
 function BetPanel({
   selectedStrike = null, currentPrice = 105432, balance = 2500,
-  dir = 'long', lev = 10, amt = 50,
+  dir = 'long', lev = 10, amt = 50, busy = false,
   onDir, onLev, onAmt, onAmtPct, onClear, onPlaceBet,
 }) {
+  const fmtStrike = v => v >= 1000 ? v.toLocaleString() : v.toFixed(v >= 1 ? 3 : 4);
   if (selectedStrike == null) {
     return (
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16, textAlign: 'center', minHeight: 340, padding: '0 24px' }}>
@@ -47,7 +48,7 @@ function BetPanel({
           <span style={{ fontSize: 10, color: C.faint, letterSpacing: 2, whiteSpace: 'nowrap' }}>TARGET STRIKE</span>
           <button onClick={onClear} style={{ background: 'none', border: 'none', color: C.fainter, cursor: 'pointer', fontSize: 15, lineHeight: 1, padding: 0 }}>×</button>
         </div>
-        <div style={{ fontFamily: FONT, fontWeight: 600, fontSize: 36, color: C.lime, lineHeight: 1, letterSpacing: -0.5, fontVariantNumeric: 'tabular-nums' }}>${selectedStrike.toLocaleString()}</div>
+        <div style={{ fontFamily: FONT, fontWeight: 600, fontSize: 36, color: C.lime, lineHeight: 1, letterSpacing: -0.5, fontVariantNumeric: 'tabular-nums' }}>${fmtStrike(selectedStrike)}</div>
         <div style={{ display: 'flex', gap: 10, marginTop: 11, alignItems: 'center' }}>
           <span style={{ fontSize: 10, color: C.dim }}>{distLabel}</span>
           <span style={{ width: 3, height: 3, borderRadius: '50%', background: '#3a3a3c', flexShrink: 0 }} />
@@ -102,7 +103,7 @@ function BetPanel({
         {summaryRow('Payout if hit', `+${est.toFixed(2)} SUI`, C.lime)}
       </div>
 
-      <button onClick={onPlaceBet} className="cta" style={{ width: '100%', height: 54, background: C.lime, border: 'none', borderRadius: 12, cursor: 'pointer', fontFamily: FONT, fontWeight: 700, fontSize: 14, color: C.bg, letterSpacing: 1 }}>Place Bet</button>
+      <button onClick={onPlaceBet} disabled={busy} className="cta" style={{ width: '100%', height: 54, background: C.lime, border: 'none', borderRadius: 12, cursor: busy ? 'default' : 'pointer', fontFamily: FONT, fontWeight: 700, fontSize: 14, color: C.bg, letterSpacing: 1, opacity: busy ? 0.6 : 1 }}>{busy ? 'Placing…' : 'Place Bet'}</button>
     </div>
   );
 }

@@ -1,12 +1,24 @@
-import { useEffect, useState } from 'react';
-import { useWallets, useConnectWallet, useCurrentAccount, useDisconnectWallet, ConnectModal } from '@mysten/dapp-kit';
-import { isEnokiWallet } from '@mysten/enoki';
+import { useEffect, useRef, useState } from 'react';
+import { authStart, authFinish, getAddress, clearSession } from '../../api';
 import { C, FONT, FONT_PIXEL } from '../trade/theme';
 
-const COPY = {
-  login: { title: 'Welcome back', sub: 'Connect to pick up where you left off.', switchText: "Don't have an account?", switchLabel: 'Sign up' },
-  signup: { title: 'Create your account', sub: 'Spin up a wallet or sign in with Google to start trading.', switchText: 'Already have an account?', switchLabel: 'Log in' },
-};
+const GOOGLE_CLIENT_ID = process.env.REACT_APP_GOOGLE_CLIENT_ID;
+
+// Load Google Identity Services once. Resolves with window.google.
+let gsiPromise;
+function loadGsi() {
+  if (gsiPromise) return gsiPromise;
+  gsiPromise = new Promise((resolve, reject) => {
+    if (window.google?.accounts?.id) return resolve(window.google);
+    const s = document.createElement('script');
+    s.src = 'https://accounts.google.com/gsi/client';
+    s.async = true;
+    s.onload = () => resolve(window.google);
+    s.onerror = () => reject(new Error('failed to load Google sign-in'));
+    document.head.appendChild(s);
+  });
+  return gsiPromise;
+}
 
 function Reticle({ size = 44 }) {
   return (
@@ -22,28 +34,15 @@ function Reticle({ size = 44 }) {
   );
 }
 
-function GoogleGlyph() {
-  return (
-    <svg width="17" height="17" viewBox="0 0 48 48">
-      <path fill="#4285F4" d="M45.12 24.5c0-1.56-.14-3.06-.4-4.5H24v8.51h11.84c-.51 2.75-2.06 5.08-4.39 6.64v5.52h7.11c4.16-3.83 6.56-9.47 6.56-16.17z" />
-      <path fill="#34A853" d="M24 46c5.94 0 10.92-1.97 14.56-5.33l-7.11-5.52c-1.97 1.32-4.49 2.1-7.45 2.1-5.73 0-10.58-3.87-12.31-9.07H4.34v5.7C7.96 41.07 15.4 46 24 46z" />
-      <path fill="#FBBC05" d="M11.69 28.18C11.25 26.86 11 25.45 11 24s.25-2.86.69-4.18v-5.7H4.34A22 22 0 0 0 2 24c0 3.55.85 6.91 2.34 9.88l7.35-5.7z" />
-      <path fill="#EA4335" d="M24 10.75c3.23 0 6.13 1.11 8.41 3.29l6.31-6.31C34.91 4.18 29.93 2 24 2 15.4 2 7.96 6.93 4.34 14.12l7.35 5.7c1.73-5.2 6.58-9.07 12.31-9.07z" />
-    </svg>
-  );
-}
-
 const short = a => a ? `${a.slice(0, 6)}…${a.slice(-4)}` : '';
 
-// Login/signup popup over a blurred backdrop. Wallet Connect opens the dapp-kit
-// modal; Google connects the Enoki zkLogin wallet; guest just dismisses.
-function AuthModal({ open, onClose, onGuest }) {
-  const [mode, setMode] = useState('login');
-  const wallets = useWallets();
-  const googleWallet = wallets.find(w => isEnokiWallet(w) && w.provider === 'google');
-  const { mutate: connect, isPending } = useConnectWallet();
-  const { mutate: disconnect } = useDisconnectWallet();
-  const account = useCurrentAccount();
+// Login popup. Runs the backend's Google-nonce handshake: /auth/start gives a
+// nonce, Google issues an id_token bound to it, /auth/finish trades it for the
+// custodial session token. The backend signs + sponsors everything after that.
+function AuthModal({ open, onClose, onAuthed, onGuest }) {
+  const address = getAddress();
+  const btnRef = useRef(null);
+  const [err, setErr] = useState('');
 
   useEffect(() => {
     if (!open) return;
@@ -52,15 +51,42 @@ function AuthModal({ open, onClose, onGuest }) {
     return () => window.removeEventListener('keydown', onKey);
   }, [open, onClose]);
 
-  if (!open) return null;
-  const copy = COPY[mode];
+  // Wire the Google button once the modal is open and no session exists.
+  useEffect(() => {
+    if (!open || address || !GOOGLE_CLIENT_ID) return;
+    let cancelled = false;
+    (async () => {
+      setErr('');
+      try {
+        const { state, nonce } = await authStart();
+        const google = await loadGsi();
+        if (cancelled) return;
+        google.accounts.id.initialize({
+          client_id: GOOGLE_CLIENT_ID,
+          nonce,
+          callback: async ({ credential }) => {
+            try {
+              await authFinish(state, credential);
+              onAuthed && onAuthed(getAddress());
+            } catch (e) { setErr(e.message); }
+          },
+        });
+        if (btnRef.current) {
+          btnRef.current.innerHTML = '';
+          google.accounts.id.renderButton(btnRef.current, { theme: 'filled_black', size: 'large', width: 348, text: 'continue_with' });
+        }
+      } catch (e) { if (!cancelled) setErr(e.message); }
+    })();
+    return () => { cancelled = true; };
+  }, [open, address, onAuthed]);
 
-  const primaryBtn = {
-    width: '100%', height: 52, borderRadius: 12, border: 'none', cursor: 'pointer',
+  if (!open) return null;
+
+  const outlineBtn = {
+    width: '100%', height: 52, borderRadius: 12, cursor: 'pointer',
     display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
-    fontFamily: FONT, fontWeight: 700, fontSize: 14, letterSpacing: 0.5,
+    fontFamily: FONT, fontSize: 14, background: 'none', border: `1px solid ${C.line2}`, color: C.text, fontWeight: 600,
   };
-  const outlineBtn = { ...primaryBtn, background: 'none', border: `1px solid ${C.line2}`, color: C.text, fontWeight: 600 };
 
   return (
     <div
@@ -73,54 +99,42 @@ function AuthModal({ open, onClose, onGuest }) {
       >
         <button onClick={onClose} aria-label="Close" style={{ position: 'absolute', top: 16, right: 18, background: 'none', border: 'none', color: C.fainter, cursor: 'pointer', fontSize: 20, lineHeight: 1 }}>×</button>
 
-        {/* brand */}
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', marginBottom: 28 }}>
           <Reticle />
           <div style={{ fontFamily: FONT_PIXEL, fontWeight: 700, fontSize: 18, letterSpacing: 4, marginTop: 16 }}>STRIKE</div>
-          <h1 style={{ fontWeight: 700, fontSize: 24, letterSpacing: -0.5, marginTop: 16 }}>{copy.title}</h1>
-          <p style={{ fontSize: 13, color: C.dim, lineHeight: 1.55, marginTop: 8, maxWidth: 300 }}>{copy.sub}</p>
+          <h1 style={{ fontWeight: 700, fontSize: 24, letterSpacing: -0.5, marginTop: 16 }}>{address ? 'Welcome back' : 'Sign in to trade'}</h1>
+          <p style={{ fontSize: 13, color: C.dim, lineHeight: 1.55, marginTop: 8, maxWidth: 300 }}>
+            {address ? 'Connected — your positions are signed for you.' : 'Sign in with Google. We hold the key and sponsor every transaction, so there is nothing to install.'}
+          </p>
         </div>
 
-        {account ? (
+        {address ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 14px', border: '1px solid rgba(212,245,107,0.25)', borderRadius: 12, background: 'rgba(212,245,107,0.05)' }}>
               <span style={{ width: 8, height: 8, borderRadius: '50%', background: C.lime, boxShadow: `0 0 9px ${C.lime}` }} />
-              <span style={{ fontSize: 13, fontWeight: 600, color: C.lime, fontVariantNumeric: 'tabular-nums' }}>{short(account.address)}</span>
+              <span style={{ fontSize: 13, fontWeight: 600, color: C.lime, fontVariantNumeric: 'tabular-nums' }}>{short(address)}</span>
               <span style={{ flex: 1 }} />
-              <button onClick={() => disconnect()} style={{ background: 'none', border: 'none', color: C.fainter, cursor: 'pointer', fontSize: 12 }}>Disconnect</button>
+              <button onClick={() => { clearSession(); onAuthed && onAuthed(''); }} style={{ background: 'none', border: 'none', color: C.fainter, cursor: 'pointer', fontSize: 12 }}>Sign out</button>
             </div>
-            <button onClick={onClose} style={{ ...primaryBtn, background: C.lime, color: C.bg }}>Continue →</button>
+            <button onClick={onClose} style={{ ...outlineBtn, background: C.lime, color: C.bg, border: 'none', fontWeight: 700 }}>Continue →</button>
           </div>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            <button
-              style={{ ...primaryBtn, background: C.lime, color: C.bg, opacity: googleWallet ? 1 : 0.5 }}
-              disabled={!googleWallet || isPending}
-              onClick={() => googleWallet && connect({ wallet: googleWallet })}
-            >
-              <GoogleGlyph /> Continue with Google
-            </button>
-
-            <ConnectModal trigger={<button style={outlineBtn} disabled={isPending}>⬡ Connect Wallet</button>} />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12, alignItems: 'center' }}>
+            {/* Google renders its own button here */}
+            <div ref={btnRef} style={{ minHeight: 44, display: 'flex', justifyContent: 'center' }} />
 
             <button onClick={onGuest || onClose} style={{ ...outlineBtn, border: 'none', height: 40, color: C.fainter, fontWeight: 500, fontSize: 13 }}>
               Continue as guest
             </button>
 
-            {!googleWallet && (
-              <div style={{ fontSize: 10.5, color: C.fainter, textAlign: 'center', lineHeight: 1.5, marginTop: 2 }}>
-                Google sign-in needs <code>REACT_APP_ENOKI_API_KEY</code> &amp; <code>REACT_APP_GOOGLE_CLIENT_ID</code>.
+            {!GOOGLE_CLIENT_ID && (
+              <div style={{ fontSize: 10.5, color: C.fainter, textAlign: 'center', lineHeight: 1.5 }}>
+                Google sign-in needs <code>REACT_APP_GOOGLE_CLIENT_ID</code> (and a matching backend).
               </div>
             )}
+            {err && <div style={{ fontSize: 11, color: C.red, textAlign: 'center' }}>{err}</div>}
           </div>
         )}
-
-        <div style={{ fontSize: 12, color: C.fainter, textAlign: 'center', marginTop: 24 }}>
-          {copy.switchText}{' '}
-          <button onClick={() => setMode(mode === 'login' ? 'signup' : 'login')} style={{ background: 'none', border: 'none', color: C.lime, fontWeight: 600, cursor: 'pointer', fontFamily: FONT, fontSize: 12 }}>
-            {copy.switchLabel}
-          </button>
-        </div>
       </div>
     </div>
   );

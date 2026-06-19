@@ -1,7 +1,9 @@
 import { C, FONT, FONT_PIXEL } from './theme';
 
+const short = a => a ? `${a.slice(0, 6)}…${a.slice(-4)}` : '';
+
 // Top bar: logo, oracle countdown, network badge, balance, auth trigger.
-function Header({ appName = 'STRIKE', oracleCountdown = '02:59:59', balance = 2500, onLoginClick }) {
+function Header({ appName = 'STRIKE', oracleCountdown = '02:59:59', balance = 2500, address = '', onLoginClick }) {
   return (
     <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center', height: 62, padding: '0 24px', borderBottom: `1px solid ${C.line}`, gap: 14 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 11, flexShrink: 0 }}>
@@ -33,8 +35,8 @@ function Header({ appName = 'STRIKE', oracleCountdown = '02:59:59', balance = 25
         </div>
       </div>
 
-      <button onClick={onLoginClick} className="cta" style={{ display: 'flex', alignItems: 'center', gap: 7, height: 36, padding: '0 16px', background: C.lime, border: 'none', borderRadius: 999, cursor: 'pointer', fontFamily: FONT, fontWeight: 600, fontSize: 12, color: C.bg, letterSpacing: 0.5, flexShrink: 0 }}>
-        Log in <span style={{ fontSize: 13 }}>→</span>
+      <button onClick={onLoginClick} className="cta" style={{ display: 'flex', alignItems: 'center', gap: 7, height: 36, padding: '0 16px', background: address ? 'transparent' : C.lime, border: address ? `1px solid ${C.line2}` : 'none', borderRadius: 999, cursor: 'pointer', fontFamily: FONT, fontWeight: 600, fontSize: 12, color: address ? C.text : C.bg, letterSpacing: 0.5, flexShrink: 0, fontVariantNumeric: 'tabular-nums' }}>
+        {address ? short(address) : <>Log in <span style={{ fontSize: 13 }}>→</span></>}
       </button>
     </div>
   );

@@ -1,22 +1,24 @@
 import { useMemo, useRef, useEffect } from 'react';
 import { C } from './theme';
 
-// Price ladder: ±50 levels around spot with long/short probability bars.
+// Price ladder: ±50 levels around spot, stepped by the market's tick size.
 // ponytail: probabilities are a one-time random seed per level — static is fine
 // for the design; replace with pool sizes from chain when wired.
-function LadderPanel({ currentPrice = 105432, selectedStrike = null, onSelectStrike }) {
+function LadderPanel({ currentPrice = 105432, step = 1, selectedStrike = null, onSelectStrike }) {
   const ref = useRef(null);
-  const base = Math.round(currentPrice);
+  const base = Math.round(currentPrice / step) * step;
+  const dec = step < 1 ? Math.min(6, Math.ceil(-Math.log10(step))) : 0;
+  const fmt = p => p.toLocaleString(undefined, { minimumFractionDigits: dec, maximumFractionDigits: dec });
 
   const levels = useMemo(() => {
     const out = [];
     for (let i = 50; i >= -50; i--) {
-      const p = base + i;
+      const p = +(base + i * step).toFixed(dec);
       const lr = Math.random() * 0.6 + 0.2; // long ratio 0.2–0.8
       out.push({ p, lr, isCurrent: i === 0 });
     }
     return out;
-  }, [base]);
+  }, [base, step, dec]);
 
   // center the ladder on the current price on mount
   useEffect(() => {
@@ -50,7 +52,7 @@ function LadderPanel({ currentPrice = 105432, selectedStrike = null, onSelectStr
                 </>
               )}
               <span style={{ fontSize: isCurrent ? 13 : 11, fontWeight: isCurrent ? 700 : 400, color: clr, minWidth: 50, fontVariantNumeric: 'tabular-nums' }}>
-                {p.toLocaleString()}
+                {fmt(p)}
               </span>
               {isCurrent ? (
                 <>
