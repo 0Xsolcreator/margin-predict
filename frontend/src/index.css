@@ -74,3 +74,5 @@ input[type=number]{-moz-appearance:textfield}
 .wbtn{transition:background 0.12s}
 .wbtn:hover{background:rgba(212,245,107,0.18) !important}
 .chart-wrap{cursor:crosshair}
+@keyframes skPulse{0%,100%{opacity:.4}50%{opacity:.15}}
+.sk{background:rgba(255,255,255,0.08);border-radius:6px;animation:skPulse 1.4s ease-in-out infinite}

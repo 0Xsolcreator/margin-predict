@@ -8,10 +8,14 @@ import PositionsPanel from '../components/trade/PositionsPanel';
 import ArenaPanel from '../components/trade/ArenaPanel';
 import AuthModal from '../components/auth/AuthModal';
 import * as api from '../api';
+import { usePythPrice } from '../hooks/usePythPrice';
 
 const FP = 1e9;   // oracle prices / strikes are 1e9 fixed-point USD
 const STRIKE_DP = 1e6; // POST /positions strike is 6dp Predict units
 const SUI_DP = 1e9;
+
+// Pyth BTC/USD feed — canonical across testnet and mainnet Hermes
+const BTC_PYTH_FEED = '0xe62df6c8b4a85fe1a67db44dc12de5db330f7ac66b72dc658afedf0f4a415b43';
 
 // Backend supports a narrow leverage band (11000–14000 bps = 1.10x–1.40x).
 // Map the 1–50 UI slider onto it and always send a valid value.
@@ -46,8 +50,12 @@ function TradePage() {
   const [amt, setAmt] = useState(50);
   const [tab, setTab] = useState('bet');
 
+  const pythPrice = usePythPrice(BTC_PYTH_FEED);
+
   const oracleId = oracle?.oracle?.oracle_id;
-  const spotUsd = oracle ? Number(oracle.latest_price?.spot ?? oracle.oracle?.min_strike ?? 0) / FP : 0;
+  const oracleSpot = oracle ? Number(oracle.latest_price?.spot ?? oracle.oracle?.min_strike ?? 0) / FP : 0;
+  // Prefer the live Pyth price; fall back to the last on-chain oracle value
+  const spotUsd = pythPrice ?? oracleSpot;
   const tickUsd = oracle ? Number(oracle.oracle?.tick_size ?? FP) / FP : 1;
   const expiry = oracle ? Number(oracle.oracle?.expiry) : null;
 
@@ -148,6 +156,7 @@ function TradePage() {
           onSelectStrike={selectStrike}
           positions={positions}
           oracleExp={expiry}
+          livePrice={pythPrice}
         />
 
         <LadderPanel
