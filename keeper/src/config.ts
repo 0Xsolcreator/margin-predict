@@ -5,7 +5,7 @@ import type { SwapAsset, SwapPool } from './deepbook/swap.js';
 export type Network = 'testnet' | 'mainnet';
 
 export const NETWORK = (process.env.NETWORK ?? 'testnet') as Network;
-export const PORT = parseInt(process.env.KEEPER_PORT ?? '4000', 10);
+export const PORT = parseInt(process.env.PORT ?? process.env.KEEPER_PORT ?? '4000', 10);
 
 // ---------------------------------------------------------------------------
 // RPC & oracle
