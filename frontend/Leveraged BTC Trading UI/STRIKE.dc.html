@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link href="https://fonts.googleapis.com/css2?family=Doto:wght@400;500;600;700;900&family=Pixelify+Sans:wght@400;500;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 100%; height: 100%; overflow: hidden; background: #0a0a0b; }
+  ::-webkit-scrollbar { width: 3px; height: 3px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: rgba(212,245,107,0.18); border-radius: 2px; }
+  input[type=range] { -webkit-appearance: none; appearance: none; }
+  input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; border-radius: 50%; background: #d4f56b; cursor: pointer; box-shadow: 0 0 0 4px rgba(212,245,107,0.12); }
+  input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+  input[type=number] { -moz-appearance: textfield; }
+  @keyframes liveBlink { 0%,100%{ opacity:1; } 50%{ opacity:0.3; } }
+  .lv-row { transition: background 0.1s; }
+  .lv-row:hover { background: rgba(255,255,255,0.035) !important; cursor: pointer; }
+  .lv-current { background: rgba(212,245,107,0.1) !important; }
+  .lv-selected { background: rgba(212,245,107,0.1) !important; }
+  .tab { transition: color 0.15s; }
+  .tab:hover { color: #c8c8c2 !important; }
+  .tab-on { color: #f4f4ef !important; }
+  .pill { transition: all 0.15s; }
+  .pill:hover { color: #c8c8c2 !important; }
+  .pill-on { color: #d4f56b !important; background: rgba(212,245,107,0.1) !important; }
+  .dir { transition: filter 0.12s; }
+  .dir:hover { filter: brightness(1.2); }
+  .cta { transition: all 0.16s; }
+  .cta:hover { box-shadow: 0 6px 30px rgba(212,245,107,0.4) !important; }
+  .cta:active { transform: translateY(1px); }
+  .ghost { transition: all 0.12s; }
+  .ghost:hover { border-color: rgba(212,245,107,0.4) !important; color: #d4f56b !important; }
+  .wbtn { transition: background 0.12s; }
+  .wbtn:hover { background: rgba(212,245,107,0.18) !important; }
+  .chart-wrap { cursor: crosshair; }
+</style>
+</helmet>
+
+<div style="display:flex; flex-direction:column; width:100vw; height:100vh; background:#0a0a0b; font-family:'Space Grotesk',sans-serif; color:#f4f4ef; overflow:hidden; user-select:none">
+
+  <div style="flex-shrink:0; display:flex; align-items:center; height:62px; padding:0 24px; border-bottom:1px solid rgba(255,255,255,0.06); gap:14px">
+    <div style="display:flex; align-items:center; gap:11px; flex-shrink:0">
+      <div style="width:26px; height:26px; border:1.5px solid #d4f56b; border-radius:50%; display:flex; align-items:center; justify-content:center; flex-shrink:0">
+        <div style="width:8px; height:8px; background:#d4f56b; border-radius:50%"></div>
+      </div>
+      <span style="font-family:'Pixelify Sans',sans-serif; font-weight:700; font-size:20px; color:#f4f4ef; letter-spacing:2px">{{ appName }}</span>
+    </div>
+
+    <div style="flex:1"></div>
+
+    <div style="display:flex; align-items:center; gap:8px; padding:7px 14px; border:1px solid rgba(255,255,255,0.08); border-radius:999px; flex-shrink:0">
+      <div style="width:6px; height:6px; border-radius:50%; background:#ff8c5a" style-active=""></div>
+      <span style="font-size:10px; color:#7d7d7a; letter-spacing:1px">ORACLE</span>
+      <span style="font-family:'Space Grotesk',sans-serif; font-weight:600; font-size:14px; font-variant-numeric:tabular-nums; color:#f4f4ef; letter-spacing:1px">{{ oracleCountdown }}</span>
+    </div>
+
+    <div style="font-size:10px; color:#5a5a58; border:1px solid rgba(255,255,255,0.08); padding:7px 12px; border-radius:999px; letter-spacing:1px; flex-shrink:0">SUI TESTNET</div>
+
+    <div style="display:flex; align-items:center; gap:9px; padding:6px 8px 6px 14px; border:1px solid rgba(255,255,255,0.08); border-radius:999px; flex-shrink:0">
+      <div>
+        <div style="font-size:8px; color:#5a5a58; letter-spacing:1px">BALANCE</div>
+        <div style="font-family:'Space Grotesk',sans-serif; font-weight:600; font-size:13px; font-variant-numeric:tabular-nums; color:#f4f4ef" ref="{{ balRef }}">2500 SUI</div>
+      </div>
+      <div style="width:26px; height:26px; border-radius:50%; background:#d4f56b; display:flex; align-items:center; justify-content:center; flex-shrink:0">
+        <div style="width:9px; height:9px; background:#0a0a0b; border-radius:3px"></div>
+      </div>
+    </div>
+  </div>
+
+  <div style="flex:1; min-height:0; display:flex">
+
+    <div style="flex:1; min-width:0; display:flex; flex-direction:column; padding:24px 28px 18px">
+      <div style="display:flex; align-items:flex-end; gap:18px; margin-bottom:6px; flex-shrink:0">
+        <div>
+          <div style="font-size:10px; color:#7d7d7a; letter-spacing:2px; margin-bottom:6px">BTC / USD — ORACLE FEED</div>
+          <div style="font-family:'Doto',monospace; font-weight:600; font-size:58px; line-height:0.9; color:#f4f4ef; letter-spacing:1px" ref="{{ heroRef }}">$105,432</div>
+        </div>
+        <div style="display:flex; align-items:center; gap:6px; padding-bottom:8px">
+          <span style="font-size:15px; font-weight:500" ref="{{ changeRef }}">▼ 2.04%</span>
+        </div>
+      </div>
+
+      <div onMouseMove="{{ onChartMove }}" onMouseLeave="{{ onChartLeave }}" onClick="{{ onChartClick }}" class="chart-wrap" style="flex:1; min-height:0; position:relative" ref="{{ containerRef }}">
+        <canvas ref="{{ chartRef }}" style="display:block; position:absolute; top:0; left:0; width:100%; height:100%"></canvas>
+      </div>
+
+      <div style="display:flex; align-items:center; gap:6px; margin-top:14px; flex-shrink:0">
+        <sc-for list="{{ ranges }}" as="r" hint-placeholder-count="6">
+          <button onClick="{{ r.onClick }}" class="{{ r.cls }} pill" style="height:30px; padding:0 16px; background:none; border:none; border-radius:8px; cursor:pointer; font-family:'Space Grotesk',sans-serif; font-size:11px; font-weight:500; color:#5a5a58; letter-spacing:1px">{{ r.label }}</button>
+        </sc-for>
+        <div style="flex:1"></div>
+        <div style="display:flex; align-items:center; gap:6px">
+          <div style="width:5px; height:5px; border-radius:50%; background:#d4f56b" class="" style-hover=""></div>
+          <span style="font-size:10px; color:#5a5a58; letter-spacing:1px" ref="{{ liveRef }}">LIVE</span>
+        </div>
+      </div>
+    </div>
+
+    <div style="width:158px; flex-shrink:0; border-left:1px solid rgba(255,255,255,0.06); display:flex; flex-direction:column">
+      <div style="display:flex; align-items:center; justify-content:space-between; padding:12px 14px 10px; flex-shrink:0">
+        <span style="font-size:9px; color:#7d7d7a; letter-spacing:2px">LEVELS</span>
+        <span style="font-size:9px; color:#4a4a4c">±50</span>
+      </div>
+      <div ref="{{ ladderRef }}" style="flex:1; overflow-y:auto; overflow-x:hidden">
+        <sc-for list="{{ priceLevels }}" as="lv" hint-placeholder-count="20">
+          <div onClick="{{ lv.onClick }}" class="{{ lv.cls }}" style="height:{{ lv.h }}; display:flex; align-items:center; gap:9px; padding:0 13px; position:relative">
+            <sc-if value="{{ lv.isCurrent }}" hint-placeholder-val="{{ false }}">
+              <div style="position:absolute; left:0; top:0; bottom:0; width:3px; background:#d4f56b"></div>
+              <div style="position:absolute; left:3px; right:0; top:0; height:1px; background:rgba(212,245,107,0.4)"></div>
+              <div style="position:absolute; left:3px; right:0; bottom:0; height:1px; background:rgba(212,245,107,0.4)"></div>
+            </sc-if>
+            <span style="font-size:{{ lv.fs }}; font-weight:{{ lv.fw }}; color:{{ lv.clr }}; min-width:50px; font-variant-numeric:tabular-nums">{{ lv.priceStr }}</span>
+            <sc-if value="{{ lv.isCurrent }}" hint-placeholder-val="{{ false }}">
+              <div style="flex:1"></div>
+              <span style="font-size:13px; font-weight:700; color:{{ lv.probClr }}; font-variant-numeric:tabular-nums; letter-spacing:0.5px">{{ lv.probTxt }}</span>
+            </sc-if>
+            <sc-if value="{{ lv.notCurrent }}" hint-placeholder-val="{{ true }}">
+              <div style="flex:1; height:6px; background:rgba(255,255,255,0.06); border-radius:3px; overflow:hidden">
+                <div style="height:100%; width:{{ lv.fPct }}%; background:linear-gradient(to right,#f2785c,#d4f56b); border-radius:3px; transition:width 0.5s ease"></div>
+              </div>
+            </sc-if>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+
+    <div style="width:372px; flex-shrink:0; border-left:1px solid rgba(255,255,255,0.06); display:flex; flex-direction:column">
+      <div style="flex-shrink:0; display:flex; gap:24px; padding:0 22px; border-bottom:1px solid rgba(255,255,255,0.06)">
+        <button onClick="{{ goBet }}" class="{{ betOn }} tab" style="height:50px; background:none; border:none; cursor:pointer; font-family:'Space Grotesk',sans-serif; font-size:12px; font-weight:600; color:#5a5a58; letter-spacing:1px; position:relative">Bet<div style="position:absolute; left:0; right:0; bottom:-1px; height:2px; background:{{ betBar }}; border-radius:2px"></div></button>
+        <button onClick="{{ goPos }}" class="{{ posOn }} tab" style="height:50px; background:none; border:none; cursor:pointer; font-family:'Space Grotesk',sans-serif; font-size:12px; font-weight:600; color:#5a5a58; letter-spacing:1px; position:relative">Positions <span style="color:#4a4a4c">{{ posCount }}</span><div style="position:absolute; left:0; right:0; bottom:-1px; height:2px; background:{{ posBar }}; border-radius:2px"></div></button>
+        <button onClick="{{ goArena }}" class="{{ arenaOn }} tab" style="height:50px; background:none; border:none; cursor:pointer; font-family:'Space Grotesk',sans-serif; font-size:12px; font-weight:600; color:#5a5a58; letter-spacing:1px; position:relative">Arena<div style="position:absolute; left:0; right:0; bottom:-1px; height:2px; background:{{ arenaBar }}; border-radius:2px"></div></button>
+      </div>
+
+      <sc-if value="{{ isBet }}" hint-placeholder-val="{{ true }}">
+        <div style="flex:1; overflow-y:auto; padding:20px; display:flex; flex-direction:column; gap:16px">
+          <sc-if value="{{ noSel }}" hint-placeholder-val="{{ false }}">
+            <div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:16px; text-align:center; min-height:340px; padding:0 24px">
+              <div style="width:54px; height:54px; border:1px solid rgba(212,245,107,0.25); border-radius:50%; display:flex; align-items:center; justify-content:center">
+                <div style="width:6px; height:6px; background:#d4f56b; border-radius:50%"></div>
+              </div>
+              <div style="font-family:'Pixelify Sans',sans-serif; font-size:14px; color:#7d7d7a; letter-spacing:1px">Pick your strike</div>
+              <div style="font-size:11px; color:#4a4a4c; line-height:1.7">Click anywhere on the chart, or tap a<br>level in the ladder, to set your target</div>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ hasSel }}" hint-placeholder-val="{{ false }}">
+            <div style="padding-bottom:16px; border-bottom:1px solid rgba(255,255,255,0.06)">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:9px">
+                <span style="font-size:10px; color:#7d7d7a; letter-spacing:2px; white-space:nowrap">TARGET STRIKE</span>
+                <button onClick="{{ clearSel }}" style="background:none; border:none; color:#5a5a58; cursor:pointer; font-size:15px; line-height:1; padding:0">×</button>
+              </div>
+              <div style="font-family:'Space Grotesk',sans-serif; font-weight:600; font-size:36px; color:#d4f56b; line-height:1; letter-spacing:-0.5px; font-variant-numeric:tabular-nums">{{ selFmt }}</div>
+              <div style="display:flex; gap:10px; margin-top:11px; align-items:center">
+                <span style="font-size:10px; color:#9a9a96">{{ distLabel }}</span>
+                <span style="width:3px; height:3px; border-radius:50%; background:#3a3a3c; flex-shrink:0"></span>
+                <span style="font-size:10px; color:{{ sentClr }}">{{ sentLabel }}</span>
+              </div>
+            </div>
+
+            <div style="display:flex; gap:4px; padding:4px; background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.08); border-radius:12px">
+              <button onClick="{{ setLong }}" class="dir" style="flex:1; height:38px; border-radius:8px; border:none; background:{{ longBg }}; cursor:pointer; font-family:'Space Grotesk',sans-serif; font-weight:600; font-size:12px; color:{{ longClr }}; letter-spacing:1px; display:flex; align-items:center; justify-content:center; gap:6px; transition:background 0.15s,color 0.15s">▲ Long</button>
+              <button onClick="{{ setShort }}" class="dir" style="flex:1; height:38px; border-radius:8px; border:none; background:{{ shortBg }}; cursor:pointer; font-family:'Space Grotesk',sans-serif; font-weight:600; font-size:12px; color:{{ shortClr }}; letter-spacing:1px; display:flex; align-items:center; justify-content:center; gap:6px; transition:background 0.15s,color 0.15s">▼ Short</button>
+            </div>
+
+            <div>
+              <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:12px">
+                <span style="font-size:10px; color:#7d7d7a; letter-spacing:2px">LEVERAGE</span>
+                <span style="font-family:'Space Grotesk',sans-serif; font-weight:600; font-size:22px; color:#f4f4ef; font-variant-numeric:tabular-nums">{{ betLev }}<span style="color:#7d7d7a; font-size:15px">×</span></span>
+              </div>
+              <input type="range" min="1" max="50" value="{{ betLev }}" onInput="{{ onLev }}" style="width:100%; height:4px; border-radius:2px; outline:none; cursor:pointer; background:{{ levTrack }}">
+              <div style="display:flex; justify-content:space-between; margin-top:7px">
+                <span style="font-size:9px; color:#4a4a4c">1×</span>
+                <span style="font-size:9px; color:#4a4a4c">25×</span>
+                <span style="font-size:9px; color:#4a4a4c">50×</span>
+              </div>
+            </div>
+
+            <div>
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:9px">
+                <span style="font-size:10px; color:#7d7d7a; letter-spacing:2px">STAKE</span>
+                <span style="font-size:9px; color:#5a5a58">balance {{ balPlain }} SUI</span>
+              </div>
+              <div style="position:relative">
+                <input type="number" value="{{ betAmt }}" onInput="{{ onAmt }}" style="width:100%; height:50px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:12px; color:#f4f4ef; font-family:'Space Grotesk',sans-serif; font-weight:600; font-size:20px; padding:0 52px 0 16px; outline:none; font-variant-numeric:tabular-nums">
+                <span style="position:absolute; right:16px; top:50%; transform:translateY(-50%); font-size:11px; color:#5a5a58">SUI</span>
+              </div>
+              <div style="display:flex; gap:7px; margin-top:9px">
+                <button onClick="{{ a25 }}" class="ghost" style="flex:1; height:28px; background:none; border:1px solid rgba(255,255,255,0.08); border-radius:8px; cursor:pointer; font-size:10px; color:#7d7d7a; font-family:'Space Grotesk',sans-serif">25%</button>
+                <button onClick="{{ a50 }}" class="ghost" style="flex:1; height:28px; background:none; border:1px solid rgba(255,255,255,0.08); border-radius:8px; cursor:pointer; font-size:10px; color:#7d7d7a; font-family:'Space Grotesk',sans-serif">50%</button>
+                <button onClick="{{ a75 }}" class="ghost" style="flex:1; height:28px; background:none; border:1px solid rgba(255,255,255,0.08); border-radius:8px; cursor:pointer; font-size:10px; color:#7d7d7a; font-family:'Space Grotesk',sans-serif">75%</button>
+                <button onClick="{{ aMax }}" class="ghost" style="flex:1; height:28px; background:none; border:1px solid rgba(212,245,107,0.25); border-radius:8px; cursor:pointer; font-size:10px; color:#d4f56b; font-family:'Space Grotesk',sans-serif">MAX</button>
+              </div>
+            </div>
+
+            <div style="border-top:1px solid rgba(255,255,255,0.06); padding-top:14px; display:flex; flex-direction:column; gap:10px">
+              <div style="display:flex; justify-content:space-between"><span style="font-size:11px; color:#7d7d7a">Notional</span><span style="font-family:'Space Grotesk',sans-serif; font-weight:500; font-size:13px; font-variant-numeric:tabular-nums; color:#c8c8c2">{{ notionalFmt }} SUI</span></div>
+              <div style="display:flex; justify-content:space-between"><span style="font-size:11px; color:#7d7d7a">Liquidation</span><span style="font-family:'Space Grotesk',sans-serif; font-weight:500; font-size:13px; font-variant-numeric:tabular-nums; color:#f2785c">{{ liqFmt }}</span></div>
+              <div style="display:flex; justify-content:space-between"><span style="font-size:11px; color:#7d7d7a">Payout if hit</span><span style="font-family:'Space Grotesk',sans-serif; font-weight:500; font-size:13px; font-variant-numeric:tabular-nums; color:#d4f56b">+{{ estFmt }} SUI</span></div>
+            </div>
+
+            <button onClick="{{ placeBet }}" class="cta" style="width:100%; height:54px; background:#d4f56b; border:none; border-radius:12px; cursor:pointer; font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:14px; color:#0a0a0b; letter-spacing:1px">Place Bet</button>
+          </sc-if>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isPos }}" hint-placeholder-val="{{ false }}">
+        <div style="flex:1; overflow-y:auto; padding:20px; display:flex; flex-direction:column; gap:12px">
+          <sc-if value="{{ noPos }}" hint-placeholder-val="{{ false }}">
+            <div style="padding:60px 20px; text-align:center">
+              <div style="font-family:'Pixelify Sans',sans-serif; font-size:13px; color:#5a5a58; letter-spacing:1px">No open positions</div>
+              <div style="font-size:11px; color:#3a3a3c; margin-top:8px">Place a bet to see it here</div>
+            </div>
+          </sc-if>
+          <sc-for list="{{ positions }}" as="p" hint-placeholder-count="0">
+            <div style="border:1px solid {{ p.bd }}; border-radius:12px; padding:16px; background:rgba(255,255,255,0.015)">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px">
+                <div style="display:flex; align-items:center; gap:9px">
+                  <span style="background:{{ p.dirBg }}; color:{{ p.dirClr }}; font-size:10px; font-weight:600; padding:4px 10px; border-radius:8px; letter-spacing:1px">{{ p.dirTxt }}</span>
+                  <span style="font-family:'Space Grotesk',sans-serif; font-weight:600; font-size:13px; font-variant-numeric:tabular-nums; color:#7d7d7a">{{ p.levTxt }}</span>
+                  <span style="font-size:10px; color:#4a4a4c">→ {{ p.targetTxt }}</span>
+                </div>
+                <span style="font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:16px; font-variant-numeric:tabular-nums; color:{{ p.pnlClr }}">{{ p.pnlTxt }}</span>
+              </div>
+              <div style="display:flex; justify-content:space-between; margin-bottom:12px">
+                <div><div style="font-size:8px; color:#4a4a4c; letter-spacing:1px; margin-bottom:3px">ENTRY</div><div style="font-family:'Space Grotesk',sans-serif; font-weight:500; font-size:12px; font-variant-numeric:tabular-nums; color:#9a9a96">{{ p.entryTxt }}</div></div>
+                <div style="text-align:center"><div style="font-size:8px; color:#4a4a4c; letter-spacing:1px; margin-bottom:3px">STAKE</div><div style="font-family:'Space Grotesk',sans-serif; font-weight:500; font-size:12px; font-variant-numeric:tabular-nums; color:#9a9a96">{{ p.stakeTxt }}</div></div>
+                <div style="text-align:right"><div style="font-size:8px; color:#4a4a4c; letter-spacing:1px; margin-bottom:3px">LIQ</div><div style="font-family:'Space Grotesk',sans-serif; font-weight:500; font-size:12px; font-variant-numeric:tabular-nums; color:#f2785c">{{ p.liqTxt }}</div></div>
+              </div>
+              <div style="margin-bottom:12px">
+                <div style="display:flex; justify-content:space-between; margin-bottom:5px"><span style="font-size:8px; color:#4a4a4c; letter-spacing:1px">MARGIN HEALTH</span><span style="font-size:9px; color:{{ p.hpClr }}">{{ p.hpTxt }}%</span></div>
+                <div style="height:5px; background:rgba(255,255,255,0.05); border-radius:3px; overflow:hidden"><div style="width:{{ p.hpPct }}%; height:100%; background:{{ p.hpClr }}; border-radius:3px; transition:width 0.3s,background 0.3s"></div></div>
+              </div>
+              <div style="display:flex; gap:8px">
+                <button onClick="{{ p.doWd }}" class="wbtn" style="flex:1; height:32px; background:rgba(212,245,107,0.1); border:1px solid rgba(212,245,107,0.25); border-radius:8px; cursor:pointer; font-family:'Space Grotesk',sans-serif; font-size:10px; font-weight:600; color:#d4f56b; letter-spacing:1px">Withdraw {{ p.wdTxt }}</button>
+                <button onClick="{{ p.doCl }}" class="ghost" style="height:32px; padding:0 16px; background:none; border:1px solid rgba(255,255,255,0.08); border-radius:8px; cursor:pointer; font-family:'Space Grotesk',sans-serif; font-size:10px; font-weight:600; color:#5a5a58; letter-spacing:1px">Close</button>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isArena }}" hint-placeholder-val="{{ false }}">
+        <div style="flex:1; overflow-y:auto; padding:20px">
+          <div style="font-family:'Pixelify Sans',sans-serif; font-size:13px; color:#7d7d7a; letter-spacing:1px; margin-bottom:18px">Top traders</div>
+          <sc-for list="{{ leaderboard }}" as="t" hint-placeholder-count="5">
+            <div style="display:flex; align-items:center; gap:12px; padding:11px 0; border-bottom:1px solid rgba(255,255,255,0.04)">
+              <div style="width:18px; font-family:'Space Grotesk',sans-serif; font-weight:600; font-size:13px; font-variant-numeric:tabular-nums; color:{{ t.rankClr }}">{{ t.rank }}</div>
+              <div style="width:18px; text-align:center; font-size:14px">{{ t.medal }}</div>
+              <div style="flex:1; min-width:0">
+                <div style="font-size:12px; font-weight:500; color:#e4e4df; overflow:hidden; text-overflow:ellipsis; white-space:nowrap">{{ t.name }}</div>
+                <div style="font-size:9px; color:#4a4a4c; margin-top:2px">{{ t.trades }} trades · {{ t.win }} win</div>
+              </div>
+              <div style="text-align:right">
+                <div style="font-family:'Space Grotesk',sans-serif; font-weight:600; font-size:13px; font-variant-numeric:tabular-nums; color:#d4f56b">+{{ t.pnl }}</div>
+                <div style="font-size:8px; color:#3a3a3c; margin-top:2px">SUI</div>
+              </div>
+            </div>
+          </sc-for>
+          <div style="margin-top:18px; padding:14px; border:1px solid rgba(212,245,107,0.18); border-radius:12px; background:rgba(212,245,107,0.04); display:flex; align-items:center; gap:12px">
+            <div style="width:18px; font-family:'Space Grotesk',sans-serif; font-weight:600; font-size:13px; font-variant-numeric:tabular-nums; color:#d4f56b">47</div>
+            <div style="width:18px; text-align:center; font-size:14px">★</div>
+            <div style="flex:1"><div style="font-size:12px; font-weight:600; color:#d4f56b">You</div><div style="font-size:9px; color:#5a5a58; margin-top:2px">{{ posCount }} open</div></div>
+            <div style="text-align:right"><div style="font-family:'Space Grotesk',sans-serif; font-weight:600; font-size:13px; font-variant-numeric:tabular-nums; color:{{ userClr }}">{{ userTxt }}</div><div style="font-size:8px; color:#3a3a3c; margin-top:2px">SUI</div></div>
+          </div>
+        </div>
+      </sc-if>
+    </div>
+
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1440,&quot;height&quot;:900},&quot;appName&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;STRIKE&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;startBalance&quot;:{&quot;editor&quot;:&quot;float&quot;,&quot;default&quot;:2500,&quot;min&quot;:100,&quot;max&quot;:100000,&quot;tsType&quot;:&quot;number&quot;},&quot;oracleHours&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:3,&quot;min&quot;:1,&quot;max&quot;:24,&quot;tsType&quot;:&quot;number&quot;}}">
+class Component extends DCLogic {
+  chartRef = React.createRef();
+  containerRef = React.createRef();
+  ladderRef = React.createRef();
+  heroRef = React.createRef();
+  changeRef = React.createRef();
+  balRef = React.createRef();
+  liveRef = React.createRef();
+
+  allLevels = {};
+  history = [];
+  rangeCounts = { '1H': 48, '4H': 96, '1D': 180, '1W': 300, '1M': 420, 'MAX': 560 };
+  simInterval = null;
+  raf = null;
+  resizeObs = null;
+
+  _price = 105432;
+  _display = 105432;
+  _ymap = null;
+  _viewFirst = 105432;
+  _hover = null;
+
+  state = {
+    sel: null, dir: 'long', lev: 10, amt: 50,
+    positions: [], balance: 2500, exp: 0,
+    tab: 'bet', range: '1D', tick: 0,
+  };
+
+  componentDidMount() {
+    const bal = this.props.startBalance ?? 2500;
+    const hrs = this.props.oracleHours ?? 3;
+    this.setState({ balance: bal, amt: Math.min(50, bal), exp: Date.now() + hrs * 3600000 });
+    this._initLevels();
+    this._initHistory();
+    this._setupCanvas();
+    this._startSim();
+    this._loop = this._loop.bind(this);
+    this.raf = requestAnimationFrame(this._loop);
+  }
+
+  componentWillUnmount() {
+    if (this.simInterval) clearInterval(this.simInterval);
+    if (this.raf) cancelAnimationFrame(this.raf);
+    if (this.resizeObs) this.resizeObs.disconnect();
+  }
+
+  _initLevels() {
+    const base = Math.round(this._price);
+    for (let i = -300; i <= 300; i++) this.allLevels[base + i] = { l: Math.random() * 700 + 100, s: Math.random() * 700 + 100 };
+  }
+
+  _initHistory() {
+    let p = 104900;
+    const h = [];
+    for (let i = 0; i < 560; i++) { p += (Math.random() - 0.49) * 95; h.push(p); }
+    this.history = h;
+    this._price = p;
+    this._display = p;
+  }
+
+  _setupCanvas() {
+    const cont = this.containerRef.current, cv = this.chartRef.current;
+    if (!cont || !cv) return;
+    const resize = () => { cv.width = cont.clientWidth; cv.height = cont.clientHeight; this._draw(); };
+    resize();
+    this.resizeObs = new ResizeObserver(resize);
+    this.resizeObs.observe(cont);
+    setTimeout(() => this._centerLadder(), 120);
+  }
+
+  _centerLadder() {
+    const lad = this.ladderRef.current;
+    if (lad) lad.scrollTop = 50 * 31 - lad.clientHeight / 2 + 15;
+  }
+
+  _startSim() {
+    this.simInterval = setInterval(() => {
+      const oldBase = Math.round(this._price);
+      this._price += (Math.random() - 0.487) * 42;
+      this.history.push(this._price);
+      if (this.history.length > 560) this.history.shift();
+
+      const base = Math.round(this._price);
+      for (let i = -8; i <= 8; i++) {
+        const k = base + i;
+        if (!this.allLevels[k]) this.allLevels[k] = { l: 200, s: 200 };
+        this.allLevels[k].l = Math.max(10, this.allLevels[k].l + (Math.random() - 0.48) * 7);
+        this.allLevels[k].s = Math.max(10, this.allLevels[k].s + (Math.random() - 0.52) * 7);
+      }
+
+      const upos = this.state.positions.map(p => {
+        const m = p.d === 'long' ? 1 : -1;
+        const pPct = ((this._price - p.e) / p.e) * p.l * m;
+        return { ...p, pnl: p.i * pPct, hp: Math.max(0, Math.min(100, 100 + pPct * 100)) };
+      }).filter(p => p.hp > 0);
+
+      if (Math.round(this._price) !== oldBase) requestAnimationFrame(() => this._centerLadder());
+      this.setState({ positions: upos, tick: (this.state.tick + 1) % 99999 });
+    }, 600);
+  }
+
+  _loop() {
+    this._display += (this._price - this._display) * 0.12;
+    if (this.heroRef.current) this.heroRef.current.textContent = '$' + Math.round(this._display).toLocaleString();
+    if (this.changeRef.current) {
+      const chg = ((this._display - this._viewFirst) / this._viewFirst) * 100;
+      const up = chg >= 0;
+      this.changeRef.current.textContent = (up ? '▲ ' : '▼ ') + Math.abs(chg).toFixed(2) + '%';
+      this.changeRef.current.style.color = up ? '#d4f56b' : '#f2785c';
+    }
+    if (this.balRef.current) this.balRef.current.textContent = Math.round(this.state.balance).toLocaleString() + ' SUI';
+    this._draw();
+    this.raf = requestAnimationFrame(this._loop);
+  }
+
+  _draw() {
+    const cv = this.chartRef.current;
+    if (!cv || !cv.width || !cv.height) return;
+    const ctx = cv.getContext('2d');
+    const W = cv.width, H = cv.height;
+    ctx.clearRect(0, 0, W, H);
+
+    const n = this.rangeCounts[this.state.range] || 180;
+    let view = this.history.slice(-n);
+    if (view.length < 2) return;
+    const pts = view.slice();
+    pts[pts.length - 1] = this._display;
+
+    let min = Math.min(...pts), max = Math.max(...pts);
+    const rng = (max - min) || 1;
+    const padT = 40, padB = 30, axisR = 64;
+    const plotW = W - axisR, plotH = H - padT - padB;
+    const nowX = plotW * 0.76;   // history fills the left 76%; the rest is the live→expiry window
+    this._viewFirst = pts[0];
+
+    const X = i => i / (pts.length - 1) * nowX;
+    const Y = p => padT + (1 - (p - min) / rng) * plotH;
+    this._ymap = { padT, plotH, min, rng, plotW };
+
+    const lime = '#d4f56b';
+
+    // area fill
+    const g = ctx.createLinearGradient(0, padT, 0, padT + plotH);
+    g.addColorStop(0, 'rgba(244,244,239,0.07)');
+    g.addColorStop(1, 'rgba(244,244,239,0)');
+    ctx.beginPath();
+    ctx.moveTo(0, Y(pts[0]));
+    for (let i = 1; i < pts.length; i++) ctx.lineTo(X(i), Y(pts[i]));
+    ctx.lineTo(X(pts.length - 1), padT + plotH);
+    ctx.lineTo(0, padT + plotH);
+    ctx.closePath();
+    ctx.fillStyle = g;
+    ctx.fill();
+
+    // line
+    ctx.beginPath();
+    ctx.moveTo(0, Y(pts[0]));
+    for (let i = 1; i < pts.length; i++) ctx.lineTo(X(i), Y(pts[i]));
+    ctx.lineJoin = 'round';
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = '#f4f4ef';
+    ctx.shadowColor = 'rgba(244,244,239,0.25)';
+    ctx.shadowBlur = 6;
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+
+    // hi/lo markers
+    const hiIdx = pts.indexOf(max), loIdx = pts.indexOf(min);
+    const marker = (val, idx, above) => {
+      const y = Y(val);
+      ctx.strokeStyle = 'rgba(255,255,255,0.14)';
+      ctx.lineWidth = 1;
+      ctx.setLineDash([2, 3]);
+      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(plotW, y); ctx.stroke();
+      ctx.setLineDash([]);
+      const px = X(idx);
+      ctx.fillStyle = '#f4f4ef';
+      ctx.beginPath(); ctx.arc(px, y, 3, 0, 7); ctx.fill();
+      ctx.fillStyle = 'rgba(255,255,255,0.55)';
+      ctx.font = "11px 'Space Grotesk', sans-serif";
+      ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+      ctx.fillText('$' + Math.round(val).toLocaleString(), 2, above ? y - 7 : y + 15);
+    };
+    marker(max, hiIdx, true);
+    marker(min, loIdx, false);
+
+    // selected target
+    const sel = this.state.sel;
+    if (sel != null && sel >= min && sel <= max) {
+      const y = Y(sel);
+      ctx.strokeStyle = lime;
+      ctx.lineWidth = 1.5;
+      ctx.setLineDash([6, 4]);
+      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(plotW, y); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = lime;
+      ctx.fillRect(plotW, y - 9, axisR, 18);
+      ctx.fillStyle = '#0a0a0b';
+      ctx.font = "600 10px 'Space Grotesk', sans-serif";
+      ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+      ctx.fillText('$' + Math.round(sel).toLocaleString(), plotW + 5, y);
+    }
+
+    // hover guide
+    if (this._hover != null && this._hover >= min && this._hover <= max && sel !== this._hover) {
+      const y = Y(this._hover);
+      ctx.strokeStyle = 'rgba(212,245,107,0.4)';
+      ctx.lineWidth = 1;
+      ctx.setLineDash([3, 3]);
+      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(plotW, y); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = 'rgba(212,245,107,0.5)';
+      ctx.font = "10px 'Space Grotesk', sans-serif";
+      ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+      ctx.fillText('$' + this._hover.toLocaleString(), plotW - 4, y - 9);
+    }
+
+    // position entry lines
+    this.state.positions.forEach(p => {
+      if (p.e < min || p.e > max) return;
+      const y = Y(p.e);
+      const c = p.d === 'long' ? 'rgba(212,245,107,0.4)' : 'rgba(242,120,92,0.4)';
+      ctx.strokeStyle = c; ctx.lineWidth = 1; ctx.setLineDash([2, 4]);
+      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(plotW * 0.5, y); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = p.d === 'long' ? '#d4f56b' : '#f2785c';
+      ctx.font = "10px 'Space Grotesk', sans-serif";
+      ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+      ctx.fillText(p.d === 'long' ? '▲' : '▼', 4, y - 4);
+    });
+
+    // ── live → expiry window ──────────────────────────────────
+    // expiry sits in the FUTURE (right of the live dot) and slides toward
+    // 'now' as the oracle round counts down — same clock as the header.
+    const msLeft = Math.max(0, this.state.exp - Date.now());
+    const totalWin = ((this.props.oracleHours ?? 3) * 3600000) || 1;
+    const frac = Math.max(0, Math.min(1, msLeft / totalWin));
+    const expiryX = nowX + (plotW - nowX) * frac;
+
+    // shaded pending-settlement zone from now to expiry
+    ctx.fillStyle = 'rgba(255,140,90,0.05)';
+    ctx.fillRect(nowX, padT - 6, expiryX - nowX, plotH + 6);
+
+    // 'now' divider at the live dot
+    ctx.strokeStyle = 'rgba(244,244,239,0.12)'; ctx.lineWidth = 1; ctx.setLineDash([2, 3]);
+    ctx.beginPath(); ctx.moveTo(nowX, padT - 6); ctx.lineTo(nowX, padT + plotH); ctx.stroke();
+    ctx.setLineDash([]);
+
+    // expiry line
+    ctx.strokeStyle = 'rgba(255,140,90,0.45)'; ctx.lineWidth = 1; ctx.setLineDash([3, 4]);
+    ctx.beginPath(); ctx.moveTo(expiryX, padT - 6); ctx.lineTo(expiryX, padT + plotH); ctx.stroke();
+    ctx.setLineDash([]);
+    const z = x => String(x).padStart(2, '0');
+    const cd = msLeft <= 0 ? 'SETTLED'
+      : z(Math.floor(msLeft / 3600000)) + ':' + z(Math.floor((msLeft % 3600000) / 60000)) + ':' + z(Math.floor((msLeft % 60000) / 1000));
+    ctx.textAlign = 'right'; ctx.textBaseline = 'alphabetic';
+    ctx.fillStyle = 'rgba(255,140,90,0.75)';
+    ctx.font = "9px 'Space Grotesk', sans-serif";
+    ctx.fillText('EXPIRY', expiryX - 5, padT + 2);
+    ctx.fillStyle = 'rgba(255,140,90,0.45)';
+    ctx.font = "10px 'Space Grotesk', sans-serif";
+    ctx.fillText(cd, expiryX - 5, padT + 16);
+
+    // current live dot
+    const lx = X(pts.length - 1), ly = Y(this._display);
+    const pulse = 0.5 + 0.5 * Math.sin(performance.now() / 380);
+    ctx.beginPath(); ctx.arc(lx, ly, 4 + pulse * 6, 0, 7);
+    ctx.fillStyle = 'rgba(212,245,107,' + (0.16 * (1 - pulse)) + ')'; ctx.fill();
+    ctx.beginPath(); ctx.arc(lx, ly, 4, 0, 7);
+    ctx.fillStyle = lime; ctx.fill();
+  }
+
+  _selectLevel(p) { this.setState({ sel: p, tab: 'bet' }); }
+  _clearSel() { this.setState({ sel: null }); }
+
+  _onChartMove(e) {
+    const cont = this.containerRef.current;
+    if (!cont || !this._ymap) return;
+    const r = cont.getBoundingClientRect();
+    const y = e.clientY - r.top;
+    const { padT, plotH, min, rng } = this._ymap;
+    const p = min + (1 - (y - padT) / plotH) * rng;
+    this._hover = Math.round(p);
+  }
+  _onChartLeave() { this._hover = null; }
+  _onChartClick() { if (this._hover != null) this._selectLevel(this._hover); }
+
+  _onLev(e) { this.setState({ lev: parseInt(e.target.value) }); }
+  _onAmt(e) { this.setState({ amt: parseFloat(e.target.value) || 0 }); }
+  _setAmtPct(f) { this.setState(s => ({ amt: Math.floor(s.balance * f) })); }
+
+  _placeBet() {
+    const { sel, dir, lev, amt, balance } = this.state;
+    if (sel == null || amt <= 0 || amt > balance) return;
+    const e = this._price;
+    const liq = dir === 'long' ? e * (1 - 1 / lev) : e * (1 + 1 / lev);
+    this.setState(s => ({
+      positions: [...s.positions, { id: Date.now(), e, t: sel, d: dir, l: lev, i: amt, liq, pnl: 0, hp: 100 }],
+      balance: Math.round((s.balance - amt) * 100) / 100,
+      sel: null, tab: 'positions',
+    }));
+  }
+
+  _withdraw(id) {
+    const p = this.state.positions.find(x => x.id === id);
+    if (!p) return;
+    const amt = Math.max(0, p.i + p.pnl);
+    this.setState(s => ({ positions: s.positions.filter(x => x.id !== id), balance: Math.round((s.balance + amt) * 100) / 100 }));
+  }
+
+  renderVals() {
+    const { sel, dir, lev, amt, positions, balance, exp, tab, range } = this.state;
+    const price = this._price;
+
+    const ms = Math.max(0, exp - Date.now());
+    const pad = x => String(x).padStart(2, '0');
+    const oracleCountdown = ms <= 0 ? 'EXPIRED' : pad(Math.floor(ms / 3600000)) + ':' + pad(Math.floor((ms % 3600000) / 60000)) + ':' + pad(Math.floor((ms % 60000) / 1000));
+
+    const base = Math.round(price);
+    const priceLevels = [];
+    for (let i = 50; i >= -50; i--) {
+      const p = base + i;
+      const lv = this.allLevels[p] || { l: 300, s: 300 };
+      const tot = lv.l + lv.s, lr = tot ? lv.l / tot : 0.5;
+      const isCur = i === 0, isSel = sel === p;
+      priceLevels.push({
+        priceStr: p.toLocaleString(),
+        isCurrent: isCur,
+        notCurrent: !isCur,
+        h: isCur ? '40px' : '31px',
+        fs: isCur ? '13px' : '11px',
+        fw: isCur ? '700' : '400',
+        probTxt: (lr >= 0.5 ? '▲ ' : '▼ ') + Math.round(lr * 100) + '%',
+        probClr: lr >= 0.5 ? '#d4f56b' : '#f2785c',
+        clr: isCur || isSel ? '#d4f56b' : '#9a9a96',
+        fPct: (lr * 100).toFixed(1),
+        cls: 'lv-row' + (isCur ? ' lv-current' : '') + (isSel ? ' lv-selected' : ''),
+        onClick: () => this._selectLevel(p),
+      });
+    }
+
+    const selLv = sel != null ? (this.allLevels[sel] || { l: 1, s: 1 }) : null;
+    const selLr = selLv ? selLv.l / (selLv.l + selLv.s) : 0.5;
+    const dist = sel != null ? sel - Math.round(price) : 0;
+    const isLong = dir === 'long';
+    const notional = amt * lev;
+    const liqPrice = isLong ? price * (1 - 1 / lev) : price * (1 + 1 / lev);
+    const pd = sel != null ? Math.abs(sel - price) : 0;
+    const est = pd ? (amt * lev * pd / price) : 0;
+    const levPct = ((lev - 1) / 49 * 100).toFixed(1);
+
+    const posItems = positions.map(p => ({
+      dirTxt: p.d.toUpperCase(), levTxt: p.l + '×',
+      targetTxt: '$' + Math.round(p.t).toLocaleString(),
+      dirBg: p.d === 'long' ? 'rgba(212,245,107,0.12)' : 'rgba(242,120,92,0.12)',
+      dirClr: p.d === 'long' ? '#d4f56b' : '#f2785c',
+      pnlTxt: (p.pnl >= 0 ? '+' : '') + p.pnl.toFixed(2),
+      pnlClr: p.pnl >= 0 ? '#d4f56b' : '#f2785c',
+      entryTxt: '$' + Math.round(p.e).toLocaleString(),
+      stakeTxt: p.i.toFixed(0),
+      liqTxt: '$' + Math.round(p.liq).toLocaleString(),
+      hpTxt: Math.round(p.hp), hpPct: p.hp.toFixed(1),
+      hpClr: p.hp > 50 ? '#d4f56b' : p.hp > 25 ? '#e8c55a' : '#f2785c',
+      bd: p.hp > 25 ? 'rgba(255,255,255,0.08)' : 'rgba(242,120,92,0.3)',
+      wdTxt: Math.max(0, p.i + p.pnl).toFixed(0),
+      doWd: () => this._withdraw(p.id), doCl: () => this._withdraw(p.id),
+    }));
+
+    const userPnl = positions.reduce((a, p) => a + p.pnl, 0);
+    const mkRange = lbl => ({ label: lbl, cls: range === lbl ? 'pill-on' : '', onClick: () => this.setState({ range: lbl }) });
+
+    return {
+      appName: this.props.appName ?? 'STRIKE',
+      oracleCountdown,
+      balPlain: Math.round(balance).toLocaleString(),
+      heroRef: this.heroRef, changeRef: this.changeRef, balRef: this.balRef, liveRef: this.liveRef,
+      ladderRef: this.ladderRef, containerRef: this.containerRef, chartRef: this.chartRef,
+      priceLevels,
+      ranges: ['1H', '4H', '1D', '1W', '1M', 'MAX'].map(mkRange),
+
+      onChartMove: e => this._onChartMove(e),
+      onChartLeave: () => this._onChartLeave(),
+      onChartClick: () => this._onChartClick(),
+
+      selFmt: sel != null ? '$' + sel.toLocaleString() : '',
+      distLabel: dist > 0 ? '+$' + dist + ' above spot' : dist < 0 ? '$' + dist + ' below spot' : 'at spot',
+      sentLabel: sel != null ? Math.round(selLr * 100) + '% long here' : '',
+      sentClr: selLr >= 0.5 ? '#d4f56b' : '#f2785c',
+      hasSel: sel != null, noSel: sel == null,
+      clearSel: () => this._clearSel(),
+
+      betLev: lev, betAmt: amt,
+      levTrack: 'linear-gradient(to right,#d4f56b ' + levPct + '%, rgba(255,255,255,0.08) ' + levPct + '%)',
+      longBg: isLong ? 'rgba(212,245,107,0.14)' : 'transparent',
+      longClr: isLong ? '#d4f56b' : '#5a5a58',
+      shortBg: !isLong ? 'rgba(242,120,92,0.14)' : 'transparent',
+      shortClr: !isLong ? '#f2785c' : '#5a5a58',
+      notionalFmt: notional.toFixed(0),
+      liqFmt: '$' + Math.round(liqPrice).toLocaleString(),
+      estFmt: est.toFixed(2),
+
+      setLong: () => this.setState({ dir: 'long' }),
+      setShort: () => this.setState({ dir: 'short' }),
+      onLev: e => this._onLev(e), onAmt: e => this._onAmt(e),
+      a25: () => this._setAmtPct(0.25), a50: () => this._setAmtPct(0.5), a75: () => this._setAmtPct(0.75), aMax: () => this._setAmtPct(1),
+      placeBet: () => this._placeBet(),
+
+      positions: posItems, posCount: positions.length, noPos: posItems.length === 0,
+
+      isBet: tab === 'bet', isPos: tab === 'positions', isArena: tab === 'arena',
+      betOn: tab === 'bet' ? 'tab-on' : '', posOn: tab === 'positions' ? 'tab-on' : '', arenaOn: tab === 'arena' ? 'tab-on' : '',
+      betBar: tab === 'bet' ? '#d4f56b' : 'transparent', posBar: tab === 'positions' ? '#d4f56b' : 'transparent', arenaBar: tab === 'arena' ? '#d4f56b' : 'transparent',
+      goBet: () => this.setState({ tab: 'bet' }), goPos: () => this.setState({ tab: 'positions' }), goArena: () => this.setState({ tab: 'arena' }),
+
+      leaderboard: [
+        { rank: '01', medal: '🥇', name: 'APEX_BULL', trades: 234, win: '76%', pnl: '48,234', rankClr: '#d4f56b' },
+        { rank: '02', medal: '🥈', name: 'PRICEWHALE', trades: 187, win: '71%', pnl: '31,820', rankClr: '#9a9a96' },
+        { rank: '03', medal: '🥉', name: 'SUI_BEAST', trades: 156, win: '68%', pnl: '24,150', rankClr: '#cd7f4a' },
+        { rank: '04', medal: '', name: 'NEON_SHORT', trades: 203, win: '64%', pnl: '18,900', rankClr: '#5a5a58' },
+        { rank: '05', medal: '', name: 'CRYPTONAUT', trades: 98, win: '61%', pnl: '15,420', rankClr: '#5a5a58' },
+        { rank: '06', medal: '', name: 'ORACLE_REX', trades: 145, win: '59%', pnl: '12,800', rankClr: '#5a5a58' },
+        { rank: '07', medal: '', name: 'BULL_LASER', trades: 77, win: '58%', pnl: '9,340', rankClr: '#5a5a58' },
+      ],
+      userClr: userPnl >= 0 ? '#d4f56b' : '#f2785c',
+      userTxt: (userPnl >= 0 ? '+' : '') + userPnl.toFixed(2),
+    };
+  }
+}
+</script>
+</body>
+</html>

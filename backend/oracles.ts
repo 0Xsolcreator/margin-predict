@@ -3,9 +3,9 @@
 
 import type { FastifyInstance } from 'fastify';
 
-const INDEXER = process.env.PREDICT_INDEXER?.trim() ?? 'https://predict-server.testnet.mystenlabs.com';
+const INDEXER = process.env.PREDICT_INDEXER?.trim() || 'https://predict-server.testnet.mystenlabs.com';
 // The indexer keys oracles by the on-chain Predict singleton, not the package.
-const PREDICT_ID = process.env.PREDICT_ID?.trim() ?? '0xc8736204d12f0a7277c86388a68bf8a194b0a14c5538ad13f22cbd8e2a38028a';
+const PREDICT_ID = process.env.PREDICT_ID?.trim() || '0xc8736204d12f0a7277c86388a68bf8a194b0a14c5538ad13f22cbd8e2a38028a';
 
 interface OracleSummary {
   oracle_id: string;

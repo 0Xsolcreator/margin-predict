@@ -7,4 +7,4 @@ keeper/src/store/data/
 *.mvd
 .claude
 Published.toml
-package-lock.json
+package-lock.jsonbackend/sessions.json
