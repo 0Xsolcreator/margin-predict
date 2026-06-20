@@ -18,6 +18,7 @@
 // this process and its memory accordingly.
 
 import crypto from 'node:crypto';
+import fs from 'node:fs';
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
 import { EnokiClient, EnokiClientError } from '@mysten/enoki';
@@ -51,15 +52,45 @@ const pending = new Map<string, Pending>();
 const sessions = new Map<string, Session>();
 const token = () => crypto.randomBytes(32).toString('hex');
 
+// File-based session persistence so logins survive backend restarts.
+// Contains private keys — never commit sessions.json.
+type PersistedSession = { address: string; kpSecret: string; zkp: ZkLoginSignatureInputs; maxEpoch: number; expires: number };
+const SESSIONS_FILE = new URL('sessions.json', import.meta.url).pathname;
+
+function saveSessions(): void {
+  const now = Date.now();
+  const out: Record<string, PersistedSession> = {};
+  for (const [t, s] of sessions) {
+    if (s.expires < now) continue;
+    out[t] = { address: s.address, kpSecret: s.kp.getSecretKey(), zkp: s.zkp, maxEpoch: s.maxEpoch, expires: s.expires };
+  }
+  fs.writeFileSync(SESSIONS_FILE, JSON.stringify(out));
+}
+
+function loadSessions(): void {
+  try {
+    const raw = JSON.parse(fs.readFileSync(SESSIONS_FILE, 'utf8')) as Record<string, PersistedSession>;
+    const now = Date.now();
+    for (const [t, s] of Object.entries(raw)) {
+      if (s.expires < now) continue;
+      sessions.set(t, { address: s.address, kp: Ed25519Keypair.fromSecretKey(s.kpSecret), zkp: s.zkp, maxEpoch: s.maxEpoch, expires: s.expires });
+    }
+  } catch { /* no file yet — start fresh */ }
+}
+
+loadSessions();
+
 export function createSession(data: Omit<Session, 'expires'>, expires: number): string {
   const t = token();
   sessions.set(t, { ...data, expires });
+  saveSessions();
   return t;
 }
 export function getSession(t: string): Session {
   const s = sessions.get(t);
   if (!s || s.expires < Date.now()) {
     sessions.delete(t);
+    saveSessions();
     throw new Error('invalid session');
   }
   return s;
