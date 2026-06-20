@@ -1,46 +1,70 @@
 import { useMemo, useRef, useEffect } from 'react';
 import { C } from './theme';
 
-// Price ladder: ±50 levels around spot, stepped by the market's tick size.
-// ponytail: probabilities are a one-time random seed per level — static is fine
-// for the design; replace with pool sizes from chain when wired.
-function LadderPanel({ currentPrice = 105432, step = 1, selectedStrike = null, onSelectStrike, loading = false }) {
+const ROWS = 15; // levels above and below current price
+
+function LadderPanel({
+  currentPrice = 105432,
+  step = 1,
+  selectedStrike = null,
+  onSelectStrike,
+  loading = false,
+  probabilities = {},
+  probsReady = false,
+}) {
   const ref = useRef(null);
-  const base = Math.round(currentPrice / step) * step;
+  // Track whether the first reveal has happened so we can skip the CSS
+  // transition on initial load (all bars appear at once) and enable it after.
+  const everReadyRef = useRef(false);
   const dec = step < 1 ? Math.min(6, Math.ceil(-Math.log10(step))) : 0;
   const fmt = p => p.toLocaleString(undefined, { minimumFractionDigits: dec, maximumFractionDigits: dec });
 
+  const currentP = +(Math.round(currentPrice / step) * step).toFixed(dec);
+
+  // Fixed 31 rows: ROWS above + current + ROWS below. Probability shown when
+  // available, zero bar when not — list never changes length or position.
   const levels = useMemo(() => {
     const out = [];
-    for (let i = 50; i >= -50; i--) {
-      const p = +(base + i * step).toFixed(dec);
-      const lr = Math.random() * 0.6 + 0.2; // long ratio 0.2–0.8
-      out.push({ p, lr, isCurrent: i === 0 });
+    for (let i = ROWS; i >= -ROWS; i--) {
+      const p = +(currentP + i * step).toFixed(dec);
+      const prob = probabilities[p];
+      out.push({
+        p,
+        lr: prob ? (prob.up ?? 0) : 0,
+        hasData: !!prob,
+        isCurrent: i === 0,
+      });
     }
     return out;
-  }, [base, step, dec]);
+  }, [currentP, step, dec, probabilities]);
 
-  // center the ladder on the current price on mount
+  // First time probsReady flips true: mark reveal done so transition enables
+  // after this render (bars appear instantly together, then animate on updates).
+  const isFirstReveal = probsReady && !everReadyRef.current;
+  if (isFirstReveal) everReadyRef.current = true;
+  const barTransition = everReadyRef.current && !isFirstReveal ? 'width 0.5s ease' : 'none';
+
+  // Keep current price row centered
   useEffect(() => {
     const el = ref.current;
-    if (el) el.scrollTop = 50 * 31 - el.clientHeight / 2 + 15;
+    if (el) el.scrollTop = ROWS * 31 - el.clientHeight / 2 + 15;
   }, []);
 
   return (
     <div style={{ width: 158, flexShrink: 0, borderLeft: `1px solid ${C.line}`, display: 'flex', flexDirection: 'column' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 14px 10px', flexShrink: 0 }}>
         <span style={{ fontSize: 9, color: C.faint, letterSpacing: 2 }}>LEVELS</span>
-        <span style={{ fontSize: 9, color: C.ghost }}>±50</span>
+        <span style={{ fontSize: 9, color: C.ghost }}>±{ROWS}</span>
       </div>
       <div ref={ref} style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden' }}>
         {loading ? (
-          Array.from({ length: 22 }, (_, i) => (
+          Array.from({ length: ROWS * 2 + 1 }, (_, i) => (
             <div key={i} style={{ height: 31, display: 'flex', alignItems: 'center', gap: 9, padding: '0 13px' }}>
               <div className="sk" style={{ width: 44, height: 10, borderRadius: 4 }} />
-              <div className="sk" style={{ flex: 1, height: 6, borderRadius: 3, opacity: 0.5 + 0.5 * Math.sin((i / 21) * Math.PI) }} />
+              <div className="sk" style={{ flex: 1, height: 6, borderRadius: 3, opacity: 0.5 + 0.5 * Math.sin((i / (ROWS * 2)) * Math.PI) }} />
             </div>
           ))
-        ) : levels.map(({ p, lr, isCurrent }) => {
+        ) : levels.map(({ p, lr, hasData, isCurrent }) => {
           const isSel = selectedStrike === p;
           const cls = 'lv-row' + (isCurrent ? ' lv-current' : '') + (isSel ? ' lv-selected' : '');
           const clr = isCurrent || isSel ? C.lime : C.dim;
@@ -65,12 +89,20 @@ function LadderPanel({ currentPrice = 105432, step = 1, selectedStrike = null, o
                 <>
                   <div style={{ flex: 1 }} />
                   <span style={{ fontSize: 13, fontWeight: 700, color: lr >= 0.5 ? C.lime : C.red, fontVariantNumeric: 'tabular-nums', letterSpacing: 0.5 }}>
-                    {(lr >= 0.5 ? '▲ ' : '▼ ') + Math.round(lr * 100) + '%'}
+                    {hasData
+                      ? (lr >= 0.5 ? '▲ ' : '▼ ') + Math.round(lr * 100) + '%'
+                      : '--'}
                   </span>
                 </>
               ) : (
                 <div style={{ flex: 1, height: 6, background: 'rgba(255,255,255,0.06)', borderRadius: 3, overflow: 'hidden' }}>
-                  <div style={{ height: '100%', width: `${(lr * 100).toFixed(1)}%`, background: 'linear-gradient(to right,#f2785c,#d4f56b)', borderRadius: 3, transition: 'width 0.5s ease' }} />
+                  <div style={{
+                    height: '100%',
+                    width: hasData ? `${(lr * 100).toFixed(1)}%` : '0%',
+                    background: 'linear-gradient(to right,#f2785c,#d4f56b)',
+                    borderRadius: 3,
+                    transition: barTransition,
+                  }} />
                 </div>
               )}
             </div>

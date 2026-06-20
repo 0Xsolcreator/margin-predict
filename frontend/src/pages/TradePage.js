@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useOracleCycle } from '../hooks/useOracleCycle';
+import { useOracleProbabilities } from '../hooks/useOracleProbabilities';
 import Header from '../components/trade/Header';
 import PriceChart from '../components/trade/PriceChart';
 import LadderPanel from '../components/trade/LadderPanel';
@@ -56,6 +57,8 @@ function TradePage() {
   const oracleSpot = oracle ? Number(oracle.latest_price?.spot ?? oracle.oracle?.min_strike ?? 0) / FP : 0;
   // Prefer the live Pyth price; fall back to the last on-chain oracle value
   const spotUsd = pythPrice ?? oracleSpot;
+
+  const { probMap, ready: probsReady } = useOracleProbabilities(oracleId, spotUsd);
   const tickUsd = oracle ? Number(oracle.oracle?.tick_size ?? FP) / FP : 1;
   const expiry = oracle ? Number(oracle.oracle?.expiry) : null;
 
@@ -155,6 +158,8 @@ function TradePage() {
           selectedStrike={selectedStrike}
           onSelectStrike={selectStrike}
           loading={pythPrice == null}
+          probabilities={probMap}
+          probsReady={probsReady}
         />
 
         <RightPanel tab={tab} onTab={setTab} posCount={positions.length}>

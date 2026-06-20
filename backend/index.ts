@@ -29,6 +29,7 @@ import { fromBase64, toBase64 } from '@mysten/sui/utils';
 import type { ZkLoginSignatureInputs } from '@mysten/sui/zklogin';
 import { registerPositionRoutes } from './positions.ts';
 import { registerOracleRoutes } from './oracles.ts';
+import { registerProbabilityRoutes } from './probabilities.ts';
 
 const NETWORK = (process.env.NETWORK ?? 'testnet') as 'mainnet' | 'testnet' | 'devnet';
 const RPC_URL = process.env.SUI_RPC_URL ?? `https://fullnode.${NETWORK}.sui.io:443`;
@@ -162,6 +163,7 @@ app.post<{ Body: { transactionKindBytes: string } }>('/tx', async (req) => {
 
 registerPositionRoutes(app);
 registerOracleRoutes(app);
+registerProbabilityRoutes(app);
 
 if (import.meta.main) {
   app.listen({ port: PORT, host: '0.0.0.0' }).catch((e) => {

@@ -43,6 +43,8 @@ export async function authFinish(state, jwt) {
 
 // --- data ---
 export const getStats = () => req('/stats', { auth: true });
+export const getOracleProbabilities = (oracleId, spot) =>
+  req(`/oracles/${oracleId}/probabilities?spot=${Math.round(spot)}`);
 export const listOracles = (all = false) => req(`/oracles${all ? '?all=1' : ''}`);
 export const getOracle = (id) => req(`/oracles/${id}`);
 export const listPositions = () => req('/positions', { auth: true });
