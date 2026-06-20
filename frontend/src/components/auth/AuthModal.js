@@ -37,6 +37,7 @@ function AuthModal({ open, onClose, onAuthed, onGuest }) {
   const address = getAddress();
   const btnRef = useRef(null);
   const [err, setErr] = useState('');
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     if (!open) return;
@@ -107,6 +108,12 @@ function AuthModal({ open, onClose, onAuthed, onGuest }) {
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 14px', border: '1px solid rgba(212,245,107,0.25)', borderRadius: 12, background: 'rgba(212,245,107,0.05)' }}>
               <span style={{ width: 8, height: 8, borderRadius: '50%', background: C.lime, boxShadow: `0 0 9px ${C.lime}` }} />
               <span style={{ fontSize: 13, fontWeight: 600, color: C.lime, fontVariantNumeric: 'tabular-nums' }}>{short(address)}</span>
+              <button
+                onClick={() => { navigator.clipboard.writeText(address); setCopied(true); setTimeout(() => setCopied(false), 1200); }}
+                title="Copy address"
+                style={{ background: 'none', border: 'none', color: copied ? C.lime : C.fainter, cursor: 'pointer', fontSize: 13, lineHeight: 1 }}>
+                {copied ? '✓' : '⧉'}
+              </button>
               <span style={{ flex: 1 }} />
               <button onClick={() => { clearSession(); onAuthed && onAuthed(''); }} style={{ background: 'none', border: 'none', color: C.fainter, cursor: 'pointer', fontSize: 12 }}>Sign out</button>
             </div>

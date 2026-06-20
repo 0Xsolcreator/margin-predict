@@ -55,3 +55,7 @@ export const closePosition = (id, oracleId) =>
   req(`/positions/${id}/close`, { method: 'POST', body: { oracleId }, auth: true });
 export const withdrawPosition = (id) =>
   req(`/positions/${id}/withdraw`, { method: 'POST', auth: true });
+
+// --- recovery (claw back escrow from stuck pending-open positions) ---
+export const getRecoverable = () => req('/recover', { auth: true });
+export const runRecover = () => req('/recover', { method: 'POST', auth: true });

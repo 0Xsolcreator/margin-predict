@@ -3,7 +3,7 @@ import { C, FONT, FONT_MONO } from './theme';
 const short = a => a ? `${a.slice(0, 6)}…${a.slice(-4)}` : '';
 
 // Top bar: logo, oracle countdown, network badge, balance, auth trigger.
-function Header({ appName = 'STRIKE', oracleCountdown = '02:59:59', balance = 2500, address = '', onLoginClick }) {
+function Header({ appName = 'STRIKE', oracleCountdown = '02:59:59', balance = 2500, address = '', recoverable = 0, onRecoverClick, onLoginClick }) {
   return (
     <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center', height: 62, padding: '0 24px', borderBottom: `1px solid ${C.line}`, gap: 14 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 13, flexShrink: 0 }}>
@@ -29,6 +29,11 @@ function Header({ appName = 'STRIKE', oracleCountdown = '02:59:59', balance = 25
           <div style={{ fontFamily: FONT, fontWeight: 600, fontSize: 13, fontVariantNumeric: 'tabular-nums', color: C.text }}>
             {Math.round(balance).toLocaleString()} SUI
           </div>
+          {recoverable > 0 && (
+            <div onClick={onRecoverClick} title="Recover stuck funds" style={{ fontFamily: FONT, fontWeight: 600, fontSize: 10, color: C.red, cursor: 'pointer', fontVariantNumeric: 'tabular-nums' }}>
+              {recoverable.toFixed(2)} SUI stuck — recover →
+            </div>
+          )}
         </div>
         <div style={{ width: 26, height: 26, borderRadius: '50%', background: C.lime, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
           <div style={{ width: 9, height: 9, background: C.bg, borderRadius: 3 }} />

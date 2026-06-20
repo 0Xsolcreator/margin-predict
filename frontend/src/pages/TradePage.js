@@ -9,6 +9,7 @@ import BetPanel from '../components/trade/BetPanel';
 import PositionsPanel from '../components/trade/PositionsPanel';
 import ArenaPanel from '../components/trade/ArenaPanel';
 import AuthModal from '../components/auth/AuthModal';
+import RecoveryModal from '../components/trade/RecoveryModal';
 import * as api from '../api';
 import { usePythPrice } from '../hooks/usePythPrice';
 
@@ -35,6 +36,8 @@ const setPosMeta = (id, m) => localStorage.setItem('mp_pos_' + id, JSON.stringif
 function TradePage() {
   const [address, setAddress] = useState(api.getAddress());
   const [authOpen, setAuthOpen] = useState(false);
+  const [recoverable, setRecoverable] = useState({ positions: [], totalSui: 0 });
+  const [recoverOpen, setRecoverOpen] = useState(false);
 
   const oracle = useOracleCycle();                   // { oracle, latest_price }
   const [balance, setBalance] = useState(0);
@@ -62,11 +65,12 @@ function TradePage() {
 
   // authed: balance + positions, polled while signed in
   const refresh = useCallback(async () => {
-    if (!api.getToken()) { setBalance(0); setPositions([]); return; }
+    if (!api.getToken()) { setBalance(0); setPositions([]); setRecoverable({ positions: [], totalSui: 0 }); return; }
     try {
-      const [stats, list] = await Promise.all([api.getStats(), api.listPositions()]);
+      const [stats, list, rec] = await Promise.all([api.getStats(), api.listPositions(), api.getRecoverable().catch(() => null)]);
       setBalance(Number(stats.sui) / SUI_DP);
       setPositions(list.map(p => ({ ...p, ...posMeta(p.positionId) })));
+      if (rec) setRecoverable(rec);
     } catch (e) {
       setError(e.message);
       if (!api.getToken()) setAddress(''); // session expired -> cleared by api
@@ -131,9 +135,12 @@ function TradePage() {
         balance={balance}
         address={address}
         oracleCountdown={fmtCountdown(expiry ? expiry - now : null)}
+        recoverable={recoverable.totalSui}
+        onRecoverClick={() => setRecoverOpen(true)}
         onLoginClick={() => setAuthOpen(true)}
       />
       <AuthModal open={authOpen} onClose={() => setAuthOpen(false)} onAuthed={onAuthed} />
+      <RecoveryModal open={recoverOpen} onClose={() => setRecoverOpen(false)} data={recoverable} onDone={refresh} />
 
       {error && (
         <div onClick={() => setError('')} style={{ flexShrink: 0, padding: '8px 24px', background: 'rgba(242,120,92,0.12)', color: '#f2785c', fontSize: 12, cursor: 'pointer' }}>
