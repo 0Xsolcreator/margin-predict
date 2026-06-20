@@ -105,7 +105,7 @@ const MARKUP = `
   </div>
 
   <!-- STAT BAND -->
-  <div style="background:#d4f56b;color:#0a0a0b">
+  <div id="stat" style="background:#d4f56b;color:#0a0a0b">
     <div style="max-width:1180px;margin:0 auto;padding:54px 32px;display:grid;grid-template-columns:repeat(4,1fr);gap:24px">
       <div class="rv" style="text-align:center;border-left:1px solid rgba(10,10,11,.14);padding-left:24px"><div style="font-family:'Doto',monospace;font-weight:700;font-size:58px;line-height:.9;letter-spacing:1px">50&times;</div><div style="font-family:'Pixelify Sans',sans-serif;font-size:12px;letter-spacing:2px;margin-top:10px;color:#2a2c14">MAX LEVERAGE</div></div>
       <div class="rv" style="text-align:center;border-left:1px solid rgba(10,10,11,.14);padding-left:24px"><div style="font-family:'Doto',monospace;font-weight:700;font-size:58px;line-height:.9;letter-spacing:1px">3H</div><div style="font-family:'Pixelify Sans',sans-serif;font-size:12px;letter-spacing:2px;margin-top:10px;color:#2a2c14">ORACLE ROUNDS</div></div>
@@ -303,7 +303,7 @@ const MARKUP = `
   </div>
 
   <!-- FINAL CTA -->
-  <div style="position:relative;background:radial-gradient(90% 130% at 50% 120%,#1a1f0a 0%,#0a0a0b 60%);overflow:hidden">
+  <div id="cta-section" style="position:relative;background:radial-gradient(90% 130% at 50% 120%,#1a1f0a 0%,#0a0a0b 60%);overflow:hidden">
     <svg width="100" height="100" viewBox="0 0 100 100" fill="none" style="position:absolute;bottom:40px;left:8%;opacity:.08;animation:drift 15s ease-in-out infinite"><circle cx="50" cy="50" r="37" stroke="#d4f56b" stroke-width="2.5"/><circle cx="50" cy="50" r="7" fill="#d4f56b"/></svg>
     <div class="rv" style="max-width:840px;margin:0 auto;padding:120px 32px;text-align:center;display:flex;flex-direction:column;align-items:center">
       <svg width="56" height="56" viewBox="0 0 100 100" fill="none" style="margin-bottom:30px;filter:drop-shadow(0 0 26px rgba(212,245,107,.5))">
@@ -318,7 +318,7 @@ const MARKUP = `
   </div>
 
   <!-- FOOTER -->
-  <div style="background:#08080a;padding:0 14px 14px">
+  <div id="footer" style="background:#08080a;padding:0 14px 14px">
     <div style="position:relative;max-width:1280px;margin:0 auto;background:linear-gradient(180deg,#101106,#0c0d07);border:1px solid rgba(255,255,255,.07);border-radius:30px;padding:60px 52px 34px;overflow:hidden">
       <svg width="320" height="320" viewBox="0 0 100 100" fill="none" style="position:absolute;top:-90px;right:-70px;opacity:.045;pointer-events:none;animation:drift 20s ease-in-out infinite"><circle cx="50" cy="50" r="37" stroke="#d4f56b" stroke-width="1.6"/><line x1="50" y1="6" x2="50" y2="94" stroke="#d4f56b" stroke-width="1.6"/><line x1="6" y1="50" x2="94" y2="50" stroke="#d4f56b" stroke-width="1.6"/></svg>
 
@@ -501,6 +501,163 @@ function LandingPage() {
         card.removeEventListener('mouseleave', leave);
         clearTimeout(resetT);
       });
+    });
+
+    // ── custom cursor ──
+    const cursorStyle = document.createElement('style');
+    cursorStyle.textContent = `
+      body.strike-landing, body.strike-landing * { cursor: none !important; }
+      .scur-dot, .scur-ring {
+        position: fixed; pointer-events: none; z-index: 9999; border-radius: 50%; will-change: left, top;
+      }
+      .scur-dot {
+        width: 8px; height: 8px; background: #d4f56b;
+        transform: translate(-50%,-50%);
+        transition: width .22s, height .22s, background .22s, opacity .22s;
+      }
+      .scur-ring {
+        width: 36px; height: 36px; border: 1.5px solid rgba(212,245,107,.5);
+        transform: translate(-50%,-50%);
+        transition: width .4s cubic-bezier(.34,1.56,.64,1), height .4s cubic-bezier(.34,1.56,.64,1),
+                    background .25s, border-color .25s, border-width .25s,
+                    border-radius .3s, opacity .25s, border-style .25s, transform .35s ease;
+        display: flex; align-items: center; justify-content: center; overflow: hidden;
+      }
+      .scur-label {
+        font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 700;
+        color: #0a0a0b; letter-spacing: 1.5px; opacity: 0;
+        transition: opacity .18s .06s; pointer-events: none; user-select: none;
+      }
+      /* element hover states */
+      .scur-dot.s-cta  { width: 5px; height: 5px; background: #0a0a0b; }
+      .scur-ring.s-cta { width: 80px; height: 80px; background: #d4f56b; border-color: #d4f56b; }
+      .scur-ring.s-cta .scur-label { opacity: 1; }
+      .scur-ring.s-card { width: 56px; height: 56px; border-color: #d4f56b; border-width: 2px; }
+      .scur-dot.s-link  { opacity: 0; }
+      .scur-ring.s-link { width: 10px; height: 10px; background: #d4f56b; border-color: #d4f56b; }
+      .scur-dot.s-chart { width: 4px; height: 4px; }
+      .scur-ring.s-chart {
+        width: 34px; height: 34px; border-color: rgba(212,245,107,.85);
+        background:
+          linear-gradient(#d4f56b,#d4f56b) 50% 0/1.5px 9px no-repeat,
+          linear-gradient(#d4f56b,#d4f56b) 50% 100%/1.5px 9px no-repeat,
+          linear-gradient(#d4f56b,#d4f56b) 0 50%/9px 1.5px no-repeat,
+          linear-gradient(#d4f56b,#d4f56b) 100% 50%/9px 1.5px no-repeat;
+      }
+      .scur-dot.s-input  { opacity: 0; }
+      .scur-ring.s-input { opacity: 0; }
+      /* section base states */
+      .scur-dot.sec-stat  { background: #0a0a0b; }
+      .scur-ring.sec-stat { border-color: rgba(10,10,11,.45); }
+      .scur-ring.sec-how  { border-radius: 3px; transform: translate(-50%,-50%) rotate(45deg); width: 26px; height: 26px; }
+      .scur-ring.sec-features { border-style: dashed; border-color: rgba(212,245,107,.7); animation: secSpin 4s linear infinite; }
+      @keyframes secSpin { from { transform: translate(-50%,-50%) rotate(0deg); } to { transform: translate(-50%,-50%) rotate(360deg); } }
+      .scur-dot.sec-arena { width: 4px; height: 4px; }
+      .scur-ring.sec-arena {
+        width: 34px; height: 34px; border-color: rgba(212,245,107,.85);
+        background:
+          linear-gradient(#d4f56b,#d4f56b) 50% 0/1.5px 9px no-repeat,
+          linear-gradient(#d4f56b,#d4f56b) 50% 100%/1.5px 9px no-repeat,
+          linear-gradient(#d4f56b,#d4f56b) 0 50%/9px 1.5px no-repeat,
+          linear-gradient(#d4f56b,#d4f56b) 100% 50%/9px 1.5px no-repeat;
+      }
+      .scur-ring.sec-cta { border-color: #d4f56b; width: 44px; height: 44px; animation: secPulse 1.4s ease-out infinite; }
+      @keyframes secPulse { 0%,100% { box-shadow: 0 0 0 0 rgba(212,245,107,.5); } 60% { box-shadow: 0 0 0 14px rgba(212,245,107,0); } }
+      .scur-dot.sec-footer  { opacity: 0.4; }
+      .scur-ring.sec-footer { width: 22px; height: 22px; opacity: 0.25; }
+    `;
+    document.head.appendChild(cursorStyle);
+    document.body.classList.add('strike-landing');
+
+    const curDot = document.createElement('div');
+    curDot.className = 'scur-dot';
+    const curRing = document.createElement('div');
+    curRing.className = 'scur-ring';
+    const curLabel = document.createElement('span');
+    curLabel.className = 'scur-label';
+    curLabel.textContent = '↗';
+    curRing.appendChild(curLabel);
+    document.body.appendChild(curDot);
+    document.body.appendChild(curRing);
+
+    let cmx = window.innerWidth / 2, cmy = window.innerHeight / 2;
+    let crx = cmx, cry = cmy;
+    let curRaf;
+    let elementState = '', sectionState = '', currentSection = '';
+
+    const applyState = () => {
+      if (elementState) {
+        curDot.className = 'scur-dot s-' + elementState;
+        curRing.className = 'scur-ring s-' + elementState;
+      } else if (sectionState) {
+        curDot.className = 'scur-dot sec-' + sectionState;
+        curRing.className = 'scur-ring sec-' + sectionState;
+      } else {
+        curDot.className = 'scur-dot';
+        curRing.className = 'scur-ring';
+      }
+    };
+    const setElementState = s => { elementState = s; applyState(); };
+    const setSectionState = s => { sectionState = s; applyState(); };
+
+    const sectionDefs = [
+      { id: '#top', key: 'hero' },
+      { id: '#stat', key: 'stat' },
+      { id: '#how', key: 'how' },
+      { id: '#features', key: 'features' },
+      { id: '#arena', key: 'arena' },
+      { id: '#cta-section', key: 'cta' },
+      { id: '#footer', key: 'footer' },
+    ].map(({ id, key }) => ({ el: root.querySelector(id), key })).filter(s => s.el);
+
+    const onCursorMove = e => { cmx = e.clientX; cmy = e.clientY; };
+    window.addEventListener('mousemove', onCursorMove);
+
+    const tickCursor = () => {
+      crx += (cmx - crx) * 0.1;
+      cry += (cmy - cry) * 0.1;
+      curDot.style.left = cmx + 'px'; curDot.style.top = cmy + 'px';
+      curRing.style.left = crx + 'px'; curRing.style.top = cry + 'px';
+      let active = '';
+      for (const { el, key } of sectionDefs) {
+        const r = el.getBoundingClientRect();
+        if (cmy >= r.top && cmy <= r.bottom) { active = key; break; }
+      }
+      if (active !== currentSection) { currentSection = active; setSectionState(active); }
+      curRaf = requestAnimationFrame(tickCursor);
+    };
+    curRaf = requestAnimationFrame(tickCursor);
+
+    // Element hover overrides — restore section state on leave
+    root.querySelectorAll('.lpill').forEach(el => {
+      el.addEventListener('mouseenter', () => setElementState('cta'));
+      el.addEventListener('mouseleave', () => setElementState(''));
+    });
+    root.querySelectorAll('.wcard').forEach(el => {
+      el.addEventListener('mouseenter', () => setElementState('card'));
+      el.addEventListener('mouseleave', () => setElementState(''));
+    });
+    root.querySelectorAll('.nlink').forEach(el => {
+      el.addEventListener('mouseenter', () => setElementState('link'));
+      el.addEventListener('mouseleave', () => setElementState(''));
+    });
+    const heroWrapEl = root.querySelector('#heroWrap');
+    if (heroWrapEl) {
+      heroWrapEl.addEventListener('mouseenter', () => setElementState('chart'));
+      heroWrapEl.addEventListener('mouseleave', () => setElementState(''));
+    }
+    const emailInEl = root.querySelector('.email-in');
+    if (emailInEl) {
+      emailInEl.style.setProperty('cursor', 'text', 'important');
+      emailInEl.addEventListener('mouseenter', () => setElementState('input'));
+      emailInEl.addEventListener('mouseleave', () => setElementState(''));
+    }
+
+    cleanups.push(() => {
+      window.removeEventListener('mousemove', onCursorMove);
+      cancelAnimationFrame(curRaf);
+      curDot.remove(); curRing.remove(); cursorStyle.remove();
+      document.body.classList.remove('strike-landing');
     });
 
     // ── hero chart ──
