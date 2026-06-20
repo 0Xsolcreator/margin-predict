@@ -10,15 +10,10 @@ const MARKUP = `
   <!-- NAV -->
   <div style="position:sticky;top:0;z-index:50;backdrop-filter:blur(14px);background:rgba(10,10,11,0.72);border-bottom:1px solid rgba(255,255,255,0.06)">
     <div style="max-width:1180px;margin:0 auto;height:70px;padding:0 32px;display:flex;align-items:center;gap:14px">
-      <a href="#top" style="display:flex;align-items:center;gap:12px">
-        <svg width="30" height="30" viewBox="0 0 100 100" fill="none" style="filter:drop-shadow(0 0 10px rgba(212,245,107,.4))">
-          <circle cx="50" cy="50" r="37" stroke="#d4f56b" stroke-width="2.4" opacity="0.55"/>
-          <line x1="50" y1="3" x2="50" y2="26" stroke="#d4f56b" stroke-width="3" stroke-linecap="round"/>
-          <line x1="50" y1="74" x2="50" y2="97" stroke="#d4f56b" stroke-width="3" stroke-linecap="round"/>
-          <line x1="3" y1="50" x2="26" y2="50" stroke="#d4f56b" stroke-width="3" stroke-linecap="round"/>
-          <line x1="74" y1="50" x2="97" y2="50" stroke="#d4f56b" stroke-width="3" stroke-linecap="round"/>
-          <circle cx="50" cy="50" r="6" fill="#d4f56b"/>
-        </svg>
+      <a href="#top" style="display:flex;align-items:center;gap:13px">
+        <div style="width:36px;height:36px;border-radius:10px;background:#d4f56b;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+          <span style="font-family:'Doto',monospace;font-weight:900;font-size:22px;color:#0a0a0b;line-height:1;letter-spacing:-.04em">S</span>
+        </div>
         <span style="font-weight:600;font-size:19px;letter-spacing:5px;color:#f4f4ef;padding-left:2px">STRIKE</span>
       </a>
       <div style="flex:1"></div>
@@ -325,11 +320,9 @@ const MARKUP = `
       <div style="position:relative;display:grid;grid-template-columns:280px 1fr;gap:56px;align-items:stretch">
         <div style="display:flex;flex-direction:column;justify-content:space-between;gap:40px;min-width:0">
           <div>
-            <svg width="58" height="58" viewBox="0 0 100 100" fill="none" style="filter:drop-shadow(0 0 18px rgba(212,245,107,.4));margin-bottom:20px">
-              <circle cx="50" cy="50" r="37" stroke="#d4f56b" stroke-width="2.4" opacity="0.6"/><circle cx="50" cy="50" r="14" stroke="#d4f56b" stroke-width="2.4" opacity="0.5"/>
-              <line x1="50" y1="3" x2="50" y2="26" stroke="#d4f56b" stroke-width="3" stroke-linecap="round"/><line x1="50" y1="74" x2="50" y2="97" stroke="#d4f56b" stroke-width="3" stroke-linecap="round"/><line x1="3" y1="50" x2="26" y2="50" stroke="#d4f56b" stroke-width="3" stroke-linecap="round"/><line x1="74" y1="50" x2="97" y2="50" stroke="#d4f56b" stroke-width="3" stroke-linecap="round"/>
-              <circle cx="50" cy="50" r="6" fill="#d4f56b"/>
-            </svg>
+            <div style="width:58px;height:58px;border-radius:14px;background:#d4f56b;display:flex;align-items:center;justify-content:center;box-shadow:0 14px 34px rgba(212,245,107,.22);margin-bottom:20px">
+              <span style="font-family:'Doto',monospace;font-weight:900;font-size:36px;color:#0a0a0b;line-height:1;letter-spacing:-.04em">S</span>
+            </div>
             <div style="font-weight:600;font-size:19px;letter-spacing:5px;margin-bottom:14px">STRIKE</div>
             <div style="font-size:13px;line-height:1.65;color:#5a5a58;max-width:230px">Oracle-settled, leveraged BTC price markets. Running on SUI testnet.</div>
           </div>

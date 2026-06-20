@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { authStart, authFinish, getAddress, clearSession } from '../../api';
-import { C, FONT, FONT_PIXEL } from '../trade/theme';
+import { C, FONT, FONT_MONO } from '../trade/theme';
 
 const GOOGLE_CLIENT_ID = process.env.REACT_APP_GOOGLE_CLIENT_ID;
 
@@ -20,17 +20,11 @@ function loadGsi() {
   return gsiPromise;
 }
 
-function Reticle({ size = 44 }) {
+function LogoTile({ size = 64 }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 100 100" fill="none" style={{ filter: 'drop-shadow(0 0 16px rgba(212,245,107,.4))' }}>
-      <circle cx="50" cy="50" r="37" stroke={C.lime} strokeWidth="2.4" opacity="0.6" />
-      <circle cx="50" cy="50" r="14" stroke={C.lime} strokeWidth="2.4" opacity="0.5" />
-      <line x1="50" y1="3" x2="50" y2="26" stroke={C.lime} strokeWidth="3" strokeLinecap="round" />
-      <line x1="50" y1="74" x2="50" y2="97" stroke={C.lime} strokeWidth="3" strokeLinecap="round" />
-      <line x1="3" y1="50" x2="26" y2="50" stroke={C.lime} strokeWidth="3" strokeLinecap="round" />
-      <line x1="74" y1="50" x2="97" y2="50" stroke={C.lime} strokeWidth="3" strokeLinecap="round" />
-      <circle cx="50" cy="50" r="6" fill={C.lime} />
-    </svg>
+    <div style={{ width: size, height: size, borderRadius: Math.round(size * 0.23), background: C.lime, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 16px 40px rgba(212,245,107,.24)' }}>
+      <span style={{ fontFamily: FONT_MONO, fontWeight: 900, fontSize: Math.round(size * 0.6), color: C.bg, lineHeight: 1, letterSpacing: '-0.04em' }}>S</span>
+    </div>
   );
 }
 
@@ -100,8 +94,8 @@ function AuthModal({ open, onClose, onAuthed, onGuest }) {
         <button onClick={onClose} aria-label="Close" style={{ position: 'absolute', top: 16, right: 18, background: 'none', border: 'none', color: C.fainter, cursor: 'pointer', fontSize: 20, lineHeight: 1 }}>×</button>
 
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', marginBottom: 28 }}>
-          <Reticle />
-          <div style={{ fontFamily: FONT_PIXEL, fontWeight: 700, fontSize: 18, letterSpacing: 4, marginTop: 16 }}>STRIKE</div>
+          <LogoTile size={64} />
+          <div style={{ fontFamily: FONT, fontWeight: 600, fontSize: 20, letterSpacing: 5, marginTop: 18, paddingLeft: 5 }}>STRIKE</div>
           <h1 style={{ fontWeight: 700, fontSize: 24, letterSpacing: -0.5, marginTop: 16 }}>{address ? 'Welcome back' : 'Sign in to trade'}</h1>
           <p style={{ fontSize: 13, color: C.dim, lineHeight: 1.55, marginTop: 8, maxWidth: 300 }}>
             {address ? 'Connected — your positions are signed for you.' : 'Sign in with Google. We hold the key and sponsor every transaction, so there is nothing to install.'}

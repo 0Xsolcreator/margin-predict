@@ -1,4 +1,4 @@
-import { C, FONT, FONT_PIXEL } from './theme';
+import { C, FONT, FONT_MONO } from './theme';
 
 const short = a => a ? `${a.slice(0, 6)}…${a.slice(-4)}` : '';
 
@@ -6,11 +6,11 @@ const short = a => a ? `${a.slice(0, 6)}…${a.slice(-4)}` : '';
 function Header({ appName = 'STRIKE', oracleCountdown = '02:59:59', balance = 2500, address = '', onLoginClick }) {
   return (
     <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center', height: 62, padding: '0 24px', borderBottom: `1px solid ${C.line}`, gap: 14 }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 11, flexShrink: 0 }}>
-        <div style={{ width: 26, height: 26, border: `1.5px solid ${C.lime}`, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-          <div style={{ width: 8, height: 8, background: C.lime, borderRadius: '50%' }} />
+      <div style={{ display: 'flex', alignItems: 'center', gap: 13, flexShrink: 0 }}>
+        <div style={{ width: 38, height: 38, borderRadius: 11, background: C.lime, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+          <span style={{ fontFamily: FONT_MONO, fontWeight: 900, fontSize: 24, color: C.bg, lineHeight: 1, letterSpacing: '-0.04em' }}>S</span>
         </div>
-        <span style={{ fontFamily: FONT_PIXEL, fontWeight: 700, fontSize: 20, color: C.text, letterSpacing: 2 }}>{appName}</span>
+        <span style={{ fontFamily: FONT, fontWeight: 600, fontSize: 18, color: C.text, letterSpacing: 5, paddingLeft: 2 }}>{appName}</span>
       </div>
 
       <div style={{ flex: 1 }} />
