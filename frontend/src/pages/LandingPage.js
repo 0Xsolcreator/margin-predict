@@ -1,4 +1,9 @@
 import { useEffect, useRef } from 'react';
+import { gsap } from 'gsap';
+import { ScrollToPlugin } from 'gsap/ScrollToPlugin';
+import Lenis from 'lenis';
+
+gsap.registerPlugin(ScrollToPlugin);
 
 // ponytail: faithful port of "STRIKE Landing.dc.html" — markup kept as a static
 // HTML string (our own content, no user input) so inline styles survive verbatim;
@@ -390,6 +395,33 @@ function LandingPage() {
     if (!root) return;
     const cleanups = [];
 
+    // ── buttery smooth scroll (Lenis + GSAP ticker) ──
+    const lenis = new Lenis({
+      duration: 1.4,
+      easing: t => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+      smoothWheel: true,
+      wheelMultiplier: 0.9,
+      touchMultiplier: 1.8,
+    });
+    const onTick = time => lenis.raf(time * 1000);
+    gsap.ticker.add(onTick);
+    gsap.ticker.lagSmoothing(0);
+    cleanups.push(() => { gsap.ticker.remove(onTick); lenis.destroy(); });
+
+    // ── smooth scroll for anchor links ──
+    const handleAnchorClick = e => {
+      const a = e.target.closest('a[href^="#"]');
+      if (!a) return;
+      const id = a.getAttribute('href').slice(1);
+      if (!id) return;
+      const target = document.getElementById(id);
+      if (!target) return;
+      e.preventDefault();
+      lenis.scrollTo(target, { offset: -70, duration: 1.2, easing: t => 1 - Math.pow(1 - t, 4) });
+    };
+    root.addEventListener('click', handleAnchorClick);
+    cleanups.push(() => root.removeEventListener('click', handleAnchorClick));
+
     // ── reveal on scroll ──
     const els = [...root.querySelectorAll('.rv')];
     const check = () => {
@@ -582,7 +614,7 @@ function LandingPage() {
   return (
     <div
       ref={rootRef}
-      style={{ width: '100%', background: '#0a0a0b', color: '#f4f4ef', overflow: 'hidden' }}
+      style={{ width: '100%', background: '#0a0a0b', color: '#f4f4ef' }}
       dangerouslySetInnerHTML={{ __html: MARKUP }}
     />
   );
