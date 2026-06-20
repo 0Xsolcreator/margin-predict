@@ -49,7 +49,7 @@ const MARKUP = `
 
       <h1 class="rv" data-d="60" style="font-weight:700;font-size:92px;line-height:0.95;letter-spacing:-2.5px;margin-bottom:26px;text-wrap:balance">Pick a price.<br><span style="color:#d4f56b;text-shadow:0 0 44px rgba(212,245,107,.35)">Strike it.</span></h1>
 
-      <p class="rv" data-d="120" style="max-width:560px;font-size:18px;line-height:1.6;color:#9a9a96;font-weight:400;margin-bottom:38px;text-wrap:pretty">Click anywhere on the live BTC chart, dial leverage up to 50&times;, and let the oracle settle the round. No order books. No spreads. Just your call.</p>
+      <p class="rv" data-d="120" style="max-width:480px;font-size:15px;line-height:1.65;color:#9a9a96;font-weight:400;margin-bottom:38px;text-wrap:pretty">Pick a BTC target. Size it up to 5&times; via DeepBook Margin. Oracle settles on-chain &mdash; no order books, no counterparty.</p>
 
       <div class="rv" data-d="180" style="display:flex;align-items:center;gap:14px;margin-bottom:14px">
         <a href="/app" class="lpill" style="display:flex;align-items:center;gap:9px;height:54px;padding:0 30px;background:#d4f56b;border-radius:999px;font-weight:700;font-size:15px;color:#0a0a0b;letter-spacing:.5px;box-shadow:0 6px 28px rgba(212,245,107,.24)">Launch app <span style="font-size:16px">&rarr;</span></a>
@@ -85,11 +85,11 @@ const MARKUP = `
               <div style="font-size:10px;color:#9a9a96;margin-top:6px">+$1,368 above spot &middot; 63% long</div>
             </div>
             <div style="display:flex;gap:4px;padding:4px;background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.08);border-radius:12px">
-              <div style="flex:1;height:34px;border-radius:8px;background:rgba(212,245,107,.14);display:flex;align-items:center;justify-content:center;font-weight:600;font-size:12px;color:#d4f56b;letter-spacing:1px">&#9650; Long</div>
-              <div style="flex:1;height:34px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:12px;color:#5a5a58;letter-spacing:1px">&#9660; Short</div>
+              <div style="flex:1;height:34px;border-radius:8px;background:rgba(212,245,107,.14);display:flex;align-items:center;justify-content:center;font-weight:600;font-size:12px;color:#d4f56b;letter-spacing:1px">&#9650; Up</div>
+              <div style="flex:1;height:34px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:12px;color:#5a5a58;letter-spacing:1px">&#9660; Down</div>
             </div>
             <div>
-              <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:9px"><span style="font-size:9px;color:#7d7d7a;letter-spacing:2px">LEVERAGE</span><span style="font-family:'Doto',monospace;font-weight:600;font-size:18px;color:#f4f4ef">20<span style="color:#7d7d7a;font-size:13px">&times;</span></span></div>
+              <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:9px"><span style="font-size:9px;color:#7d7d7a;letter-spacing:2px">LEVERAGE</span><span style="font-family:'Doto',monospace;font-weight:600;font-size:18px;color:#f4f4ef">3<span style="color:#7d7d7a;font-size:13px">&times;</span></span></div>
               <div style="height:4px;border-radius:2px;background:linear-gradient(to right,#d4f56b 39%,rgba(255,255,255,.08) 39%)"></div>
             </div>
             <div style="border-top:1px solid rgba(255,255,255,.06);padding-top:12px;display:flex;flex-direction:column;gap:8px">
@@ -107,7 +107,7 @@ const MARKUP = `
   <!-- STAT BAND -->
   <div id="stat" style="background:#d4f56b;color:#0a0a0b">
     <div style="max-width:1180px;margin:0 auto;padding:54px 32px;display:grid;grid-template-columns:repeat(4,1fr);gap:24px">
-      <div class="rv" style="text-align:center;border-left:1px solid rgba(10,10,11,.14);padding-left:24px"><div style="font-family:'Doto',monospace;font-weight:700;font-size:58px;line-height:.9;letter-spacing:1px">50&times;</div><div style="font-family:'Pixelify Sans',sans-serif;font-size:12px;letter-spacing:2px;margin-top:10px;color:#2a2c14">MAX LEVERAGE</div></div>
+      <div class="rv" style="text-align:center;border-left:1px solid rgba(10,10,11,.14);padding-left:24px"><div style="font-family:'Doto',monospace;font-weight:700;font-size:58px;line-height:.9;letter-spacing:1px">5&times;</div><div style="font-family:'Pixelify Sans',sans-serif;font-size:12px;letter-spacing:2px;margin-top:10px;color:#2a2c14">MAX LEVERAGE</div></div>
       <div class="rv" style="text-align:center;border-left:1px solid rgba(10,10,11,.14);padding-left:24px"><div style="font-family:'Doto',monospace;font-weight:700;font-size:58px;line-height:.9;letter-spacing:1px">3H</div><div style="font-family:'Pixelify Sans',sans-serif;font-size:12px;letter-spacing:2px;margin-top:10px;color:#2a2c14">ORACLE ROUNDS</div></div>
       <div class="rv" style="text-align:center;border-left:1px solid rgba(10,10,11,.14);padding-left:24px"><div style="font-family:'Doto',monospace;font-weight:700;font-size:58px;line-height:.9;letter-spacing:1px">100%</div><div style="font-family:'Pixelify Sans',sans-serif;font-size:12px;letter-spacing:2px;margin-top:10px;color:#2a2c14">ON-CHAIN SETTLED</div></div>
       <div class="rv" style="text-align:center;border-left:1px solid rgba(10,10,11,.14);padding-left:24px"><div style="font-family:'Doto',monospace;font-weight:700;font-size:58px;line-height:.9;letter-spacing:1px">0</div><div style="font-family:'Pixelify Sans',sans-serif;font-size:12px;letter-spacing:2px;margin-top:10px;color:#2a2c14">ORDER BOOKS</div></div>
@@ -125,7 +125,7 @@ const MARKUP = `
         <div class="rv wcard" data-d="0" style="display:flex;flex-direction:column;border:1px solid rgba(255,255,255,.07);border-radius:18px;padding:34px 30px 0;background:linear-gradient(180deg,#0e0f08,#0b0b0c);overflow:hidden">
           <div style="font-family:'Doto',monospace;font-weight:700;font-size:46px;color:#d4f56b;line-height:1;margin-bottom:22px">01</div>
           <div style="font-size:21px;font-weight:600;margin-bottom:12px;letter-spacing:-.3px">Pick your strike</div>
-          <div style="font-size:14px;line-height:1.65;color:#9a9a96">Click anywhere on the live chart to set a target price. Long if you think it gets there, short if you don't.</div>
+          <div style="font-size:14px;line-height:1.65;color:#9a9a96">Click anywhere on the live chart to set a target price. Up if you think it gets there, down if you don't.</div>
           <div class="cviz">
             <svg viewBox="0 0 300 130" preserveAspectRatio="none" width="100%" height="130" style="display:block">
               <defs>
@@ -151,18 +151,18 @@ const MARKUP = `
         <div class="rv wcard" data-d="100" style="display:flex;flex-direction:column;border:1px solid rgba(255,255,255,.07);border-radius:18px;padding:34px 30px 0;background:linear-gradient(180deg,#0e0f08,#0b0b0c);overflow:hidden">
           <div style="font-family:'Doto',monospace;font-weight:700;font-size:46px;color:#d4f56b;line-height:1;margin-bottom:22px">02</div>
           <div style="font-size:21px;font-weight:600;margin-bottom:12px;letter-spacing:-.3px">Dial the leverage</div>
-          <div style="font-size:14px;line-height:1.65;color:#9a9a96">Slide from 1&times; to 50&times;. Bigger conviction means a bigger payout &mdash; and a tighter liquidation.</div>
+          <div style="font-size:14px;line-height:1.65;color:#9a9a96">Slide from 1&times; to 5&times;. Bigger conviction means a bigger payout &mdash; and a tighter liquidation.</div>
           <div class="cviz">
             <div style="width:100%;max-width:240px;display:flex;flex-direction:column;gap:16px">
               <div style="display:flex;justify-content:space-between;align-items:flex-end">
                 <span style="font-family:'Pixelify Sans',sans-serif;font-size:11px;letter-spacing:1.5px;color:#7d8a52">LEVERAGE</span>
-                <span class="pa" style="font-family:'Doto',monospace;font-weight:700;font-size:26px;color:#d4f56b;line-height:1;display:inline-block;animation:badgePulse 1.4s ease-in-out infinite">50&times;</span>
+                <span class="pa" style="font-family:'Doto',monospace;font-weight:700;font-size:26px;color:#d4f56b;line-height:1;display:inline-block;animation:badgePulse 1.4s ease-in-out infinite">5&times;</span>
               </div>
               <div style="position:relative;height:8px;border-radius:999px;background:rgba(255,255,255,.08)">
                 <div class="pa" style="position:absolute;left:0;top:0;height:8px;border-radius:999px;background:#d4f56b;width:16%;box-shadow:0 0 12px rgba(212,245,107,.5);animation:fillW 3.4s ease-in-out infinite"></div>
                 <div class="pa" style="position:absolute;top:50%;left:16%;width:18px;height:18px;border-radius:50%;background:#d4f56b;border:3px solid #0b0b0c;transform:translate(-50%,-50%);box-shadow:0 0 14px rgba(212,245,107,.6);animation:thumbL 3.4s ease-in-out infinite"></div>
               </div>
-              <div style="display:flex;justify-content:space-between;font-family:'Doto',monospace;font-size:11px;color:#5a5a58"><span>1&times;</span><span>10&times;</span><span>25&times;</span><span>50&times;</span></div>
+              <div style="display:flex;justify-content:space-between;font-family:'Doto',monospace;font-size:11px;color:#5a5a58"><span>1&times;</span><span>2&times;</span><span>3&times;</span><span>5&times;</span></div>
             </div>
           </div>
         </div>
@@ -220,7 +220,7 @@ const MARKUP = `
           </div>
         </div>
         <div class="rv wcard" data-d="100" style="display:flex;flex-direction:column;border:1px solid rgba(255,255,255,.07);border-radius:18px;padding:36px 30px 0;background:rgba(255,255,255,.015);overflow:hidden">
-          <div style="font-size:21px;font-weight:600;margin-bottom:12px;letter-spacing:-.3px">Up to 50&times; leverage</div>
+          <div style="font-size:21px;font-weight:600;margin-bottom:12px;letter-spacing:-.3px">Up to 5&times; leverage</div>
           <div style="font-size:14px;line-height:1.65;color:#9a9a96">Push your edge as far as your nerve allows. Notional scales with conviction &mdash; so does the upside.</div>
           <div class="cviz">
             <div style="width:100%;display:flex;flex-direction:column;align-items:center;gap:14px">
@@ -233,7 +233,7 @@ const MARKUP = `
                 <div class="pa" style="width:13px;height:61px;border-radius:4px;background:linear-gradient(180deg,#d4f56b,#8fb53a);transform-origin:bottom;transform:scaleY(.28);animation:eqBar 1.5s ease-in-out .55s infinite"></div>
                 <div class="pa" style="width:13px;height:66px;border-radius:4px;background:linear-gradient(180deg,#d4f56b,#8fb53a);transform-origin:bottom;transform:scaleY(.28);animation:eqBar 1.5s ease-in-out .66s infinite"></div>
               </div>
-              <div style="font-family:'Doto',monospace;font-weight:700;font-size:13px;letter-spacing:1px;color:#7d8a52">1&times;<span style="color:#5a5a58;margin:0 9px">&rarr;</span><span style="color:#d4f56b">50&times;</span></div>
+              <div style="font-family:'Doto',monospace;font-weight:700;font-size:13px;letter-spacing:1px;color:#7d8a52">1&times;<span style="color:#5a5a58;margin:0 9px">&rarr;</span><span style="color:#d4f56b">5&times;</span></div>
             </div>
           </div>
         </div>
@@ -298,6 +298,56 @@ const MARKUP = `
           <div style="flex:1"><div style="font-size:13px;font-weight:600;color:#d4f56b">You</div><div style="font-size:10px;color:#5a5a58;margin-top:2px">climbing fast</div></div>
           <div style="text-align:right"><div style="font-family:'Doto',monospace;font-weight:600;font-size:14px;color:#d4f56b">+412</div><div style="font-size:8px;color:#3a3a3c;margin-top:1px">SUI</div></div>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- BUILT ON TOP OF -->
+  <div id="powered-by" style="background:#0a0a0b;border-top:1px solid rgba(255,255,255,.05)">
+    <div style="max-width:900px;margin:0 auto;padding:52px 32px;display:flex;flex-direction:column;align-items:center;gap:32px">
+      <span style="font-family:'Pixelify Sans',sans-serif;font-size:11px;letter-spacing:3.5px;color:#7d8a52">BUILT ON TOP OF</span>
+      <div style="display:flex;align-items:center;justify-content:center;gap:52px;flex-wrap:wrap">
+
+        <!-- Sui -->
+        <div class="pbrand" style="display:flex;align-items:center;gap:12px">
+          <svg width="26" height="33" viewBox="0 0 300 383.5" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path fill-rule="evenodd" clip-rule="evenodd" d="M240.1,159.9c15.6,19.6,25,44.5,25,71.5s-9.6,52.6-25.7,72.4l-1.4,1.7l-0.4-2.2c-0.3-1.8-0.7-3.7-1.1-5.6c-8-35.3-34.2-65.6-77.4-90.2c-29.1-16.5-45.8-36.4-50.2-59c-2.8-14.6-0.7-29.3,3.3-41.9c4.1-12.6,10.1-23.1,15.2-29.4l16.8-20.5c2.9-3.6,8.5-3.6,11.4,0L240.1,159.9z M266.6,139.4L154.2,2c-2.1-2.6-6.2-2.6-8.3,0L33.4,139.4l-0.4,0.5C12.4,165.6,0,198.2,0,233.7c0,82.7,67.2,149.8,150,149.8c82.8,0,150-67.1,150-149.8c0-35.5-12.4-68.1-33.1-93.8L266.6,139.4z M60.3,159.5l10-12.3l0.3,2.3c0.2,1.8,0.5,3.6,0.9,5.4c6.5,34.1,29.8,62.6,68.6,84.6c33.8,19.2,53.4,41.3,59.1,65.6c2.4,10.1,2.8,20.1,1.8,28.8l-0.1,0.5l-0.5,0.2c-15.2,7.4-32.4,11.6-50.5,11.6c-63.5,0-115-51.4-115-114.8C34.9,204.2,44.4,179.1,60.3,159.5z" fill="#d4f56b"/>
+          </svg>
+          <span style="font-size:16px;font-weight:600;color:#c8c8c2;letter-spacing:.5px">Sui</span>
+        </div>
+
+        <div style="width:1px;height:32px;background:rgba(255,255,255,.08)"></div>
+
+        <!-- DeepBook — official "D" icon mark from deepbook.tech nav -->
+        <div class="pbrand" style="display:flex;align-items:center;gap:12px">
+          <svg width="33" height="22" viewBox="0 0 27.2 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M27.1875 9.96484C27.1875 14.4024 23.5899 18 19.1523 18H0V9.96484H27.1875ZM19.1523 0C23.5899 0 27.1875 3.59755 27.1875 8.03516H0V0H19.1523Z" fill="#d4f56b"/>
+          </svg>
+          <span style="font-size:16px;font-weight:600;color:#c8c8c2;letter-spacing:.5px">DeepBook</span>
+        </div>
+
+        <div style="width:1px;height:32px;background:rgba(255,255,255,.08)"></div>
+
+        <!-- Enoki — official icon from enoki.mystenlabs.com favicon -->
+        <div class="pbrand" style="display:flex;align-items:center;gap:12px">
+          <svg width="20" height="26" viewBox="7 4 18 24.63" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M15.5462 4C13.9603 4 12.6738 5.29979 12.6738 6.90274V8.39105C12.6738 9.13189 12.0741 9.73253 11.3333 9.73253H9.87337C8.28653 9.73253 7 11.0314 7 12.6343V12.6627C6.99963 13.0402 7.07369 13.414 7.21796 13.7628C7.36223 14.1116 7.57387 14.4285 7.84076 14.6953C8.10765 14.9622 8.42456 15.1739 8.77334 15.3181C9.12212 15.4624 9.49593 15.5365 9.87337 15.5361C11.4593 15.5361 12.7458 14.2373 12.7458 12.6343V11.1451C12.7458 10.4052 13.3464 9.80453 14.0863 9.80453H24.3747C24.7726 9.80453 25.0947 9.47863 25.09 9.08074L25.036 4.70674C25.0338 4.51852 24.9574 4.33877 24.8235 4.20647C24.6896 4.07417 24.509 3.99999 24.3207 4H15.5462Z" fill="#d4f56b"/>
+            <path d="M7.00095 21.9214C7.00095 20.3184 8.28653 19.0186 9.87337 19.0186H11.2613C12.0021 19.0186 12.6018 18.4189 12.6018 17.6781V16.1888C12.6018 14.5868 13.8883 13.2871 15.4752 13.2871H24.3842C24.7783 13.2871 25.0985 13.6073 25.0985 14.0023V18.3763C25.0985 18.566 25.0232 18.7479 24.889 18.8821C24.7549 19.0162 24.573 19.0916 24.3833 19.0916H14.0873C13.3474 19.0916 12.7467 19.6913 12.7467 20.4321V21.9214C12.7467 23.5234 11.4602 24.8232 9.87432 24.8232C9.49688 24.8235 9.12307 24.7495 8.77428 24.6052C8.4255 24.4609 8.1086 24.2493 7.8417 23.9824C7.57481 23.7155 7.36318 23.3986 7.21891 23.0498C7.07464 22.701 7.00057 22.3272 7.00095 21.9498V21.9214Z" fill="#d4f56b"/>
+            <path d="M15.4752 22.5741C13.8883 22.5741 12.6018 23.8729 12.6018 25.4759C12.6018 25.857 12.6769 26.2345 12.8228 26.5866C12.9687 26.9387 13.1825 27.2586 13.452 27.5281C13.7216 27.7976 14.0416 28.0113 14.3938 28.1571C14.7459 28.3028 15.1234 28.3778 15.5045 28.3777H18.3353C19.1049 28.3777 19.8429 28.072 20.3871 27.5278C20.9313 26.9836 21.2371 26.2455 21.2371 25.4759C21.2371 24.7063 20.9313 23.9682 20.3871 23.424C19.8429 22.8798 19.1049 22.5741 18.3353 22.5741H15.4752Z" fill="#d4f56b"/>
+          </svg>
+          <span style="font-size:16px;font-weight:600;color:#c8c8c2;letter-spacing:.5px">Enoki</span>
+        </div>
+
+        <div style="width:1px;height:32px;background:rgba(255,255,255,.08)"></div>
+
+        <!-- Pyth — official "P" letterform from pyth-network/pyth-crosschain PythLogo.tsx -->
+        <div class="pbrand" style="display:flex;align-items:center;gap:12px">
+          <svg width="28" height="25" viewBox="0 0 137 122" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path fill-rule="evenodd" clip-rule="evenodd" d="M131.41 56.54C127.89 62.08 122.82 66.44 116.93 69.3C110.64 72.35 103.62 73.65 96.66 73.65H22.22V122H0V0H96.66C104.13 0 110.89 1.44 116.93 4.34C123.04 7.19 127.87 11.39 131.42 16.93C134.98 22.49 136.74 29.09 136.74 36.69C136.74 44.29 134.98 50.91 131.42 56.53L131.41 56.54ZM109.53 50.9C105.52 54.18 100.11 55.83 93.31 55.83H21.34V17.83H93.31C100.11 17.83 105.51 19.5 109.53 22.84C113.54 26.13 115.55 30.8 115.55 36.87C115.55 42.94 113.54 47.56 109.53 50.9Z" fill="#d4f56b"/>
+          </svg>
+          <span style="font-size:16px;font-weight:600;color:#c8c8c2;letter-spacing:.5px">Pyth</span>
+        </div>
+
       </div>
     </div>
   </div>
@@ -565,6 +615,9 @@ function LandingPage() {
       @keyframes secPulse { 0%,100% { box-shadow: 0 0 0 0 rgba(212,245,107,.5); } 60% { box-shadow: 0 0 0 14px rgba(212,245,107,0); } }
       .scur-dot.sec-footer  { opacity: 0.4; }
       .scur-ring.sec-footer { width: 22px; height: 22px; opacity: 0.25; }
+      /* powered-by brand badges */
+      .pbrand { opacity: .45; transition: opacity .3s; }
+      .pbrand:hover { opacity: 1; }
     `;
     document.head.appendChild(cursorStyle);
     document.body.classList.add('strike-landing');
