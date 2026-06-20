@@ -52,12 +52,11 @@ const enoki = new EnokiClient({ apiKey: SECRET });
 const RPC_TOKEN = process.env.SUI_RPC_TOKEN;
 
 // Logs the full request/response for any non-2xx so grpc-web errors aren't opaque.
-const debugFetch: typeof fetch = async (url, init) => {
+const debugFetch = async (url: any, init: any) => {
   const res = await fetch(url, init);
   if (!res.ok) {
     const body = await res.clone().text().catch(() => '<no body>');
-    const h = init?.headers;
-    const ct = h instanceof Headers ? h.get('content-type') : (h as Record<string, string>)?.['content-type'];
+    const ct = new Headers(init?.headers).get('content-type');
     console.error(`[grpc] ${res.status} ${res.statusText} ${url}\n  sent content-type: ${ct}\n  response body: ${body}`);
   }
   return res;

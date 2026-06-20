@@ -16,7 +16,9 @@
   },
   "dependencies": {
     "@fastify/cors": "^11.2.0",
+    "@grpc/grpc-js": "^1.14.4",
     "@mysten/enoki": "^1.1.1",
+    "@protobuf-ts/grpc-transport": "^2.11.1",
     "fastify": "^5.8.5"
   }
 }
