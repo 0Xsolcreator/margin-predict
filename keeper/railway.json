@@ -4,7 +4,7 @@
     "builder": "RAILPACK"
   },
   "deploy": {
-    "startCommand": "bun src/index.ts",
+    "startCommand": "bun keeper/src/index.ts",
     "healthcheckPath": "/config/leverage-range",
     "healthcheckTimeout": 60,
     "restartPolicyType": "ON_FAILURE",

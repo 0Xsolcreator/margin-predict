@@ -1,2 +1,2 @@
 [deploy]
-startCommand = "bun src/index.ts"
+startCommand = "bun keeper/src/index.ts"
