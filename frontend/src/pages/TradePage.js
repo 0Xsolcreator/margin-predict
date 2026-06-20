@@ -19,11 +19,9 @@ const SUI_DP = 1e9;
 // Pyth BTC/USD feed — canonical across testnet and mainnet Hermes
 const BTC_PYTH_FEED = '0xe62df6c8b4a85fe1a67db44dc12de5db330f7ac66b72dc658afedf0f4a415b43';
 
-// Backend supports a narrow leverage band (11000–14000 bps = 1.10x–1.40x).
-// Map the 1–50 UI slider onto it and always send a valid value.
-// ponytail: linear map, the slider's notional/liq math stays cosmetic; tighten
-// the slider range if the band ever changes.
-const levToBps = lev => Math.round(11000 + ((Math.min(50, Math.max(1, lev)) - 1) / 49) * 3000);
+// SUI leverage runs 1.0x–1.4x on the slider; bps = lev × 10000, clamped to the
+// backend's supported band (11000–14000) so we never send an invalid value.
+const levToBps = lev => Math.round(Math.min(14000, Math.max(11000, lev * 10000)));
 
 const fmtCountdown = ms => {
   if (ms == null || ms <= 0) return '--:--:--';
@@ -47,7 +45,7 @@ function TradePage() {
 
   const [selectedStrike, setSelectedStrike] = useState(null);
   const [dir, setDir] = useState('long');
-  const [lev, setLev] = useState(10);
+  const [lev, setLev] = useState(1.2);
   const [amt, setAmt] = useState(50);
   const [tab, setTab] = useState('bet');
 

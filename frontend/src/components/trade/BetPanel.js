@@ -1,10 +1,13 @@
 import { C, FONT, FONT_PIXEL } from './theme';
 
+// SUI margin caps out at 1.4× — slider runs 1.0×–1.4× in 0.1 steps.
+const MAX_LEV = 1.4;
+
 // Bet ticket. Controlled by TradePage: shows empty prompt until a strike is
 // picked, then direction / leverage / stake / summary. onPlaceBet is a stub.
 function BetPanel({
   selectedStrike = null, currentPrice = 105432, balance = 2500,
-  dir = 'long', lev = 10, amt = 50, busy = false,
+  dir = 'long', lev = 1.2, amt = 50, busy = false,
   onDir, onLev, onAmt, onAmtPct, onClear, onPlaceBet,
 }) {
   const fmtStrike = v => v >= 1000 ? v.toLocaleString() : v.toFixed(v >= 1 ? 3 : 4);
@@ -26,7 +29,7 @@ function BetPanel({
   const liqPrice = isLong ? currentPrice * (1 - 1 / lev) : currentPrice * (1 + 1 / lev);
   const pd = Math.abs(selectedStrike - currentPrice);
   const est = pd ? (amt * lev * pd / currentPrice) : 0;
-  const levPct = ((lev - 1) / 49 * 100).toFixed(1);
+  const levPct = ((lev - 1) / (MAX_LEV - 1) * 100).toFixed(1);
   const distLabel = dist > 0 ? `+$${dist} above spot` : dist < 0 ? `$${dist} below spot` : 'at spot';
 
   const ghostBtn = (label, onClick, accent) => (
@@ -66,14 +69,14 @@ function BetPanel({
       <div>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 12 }}>
           <span style={{ fontSize: 10, color: C.faint, letterSpacing: 2 }}>LEVERAGE</span>
-          <span style={{ fontFamily: FONT, fontWeight: 600, fontSize: 22, color: C.text, fontVariantNumeric: 'tabular-nums' }}>{lev}<span style={{ color: C.faint, fontSize: 15 }}>×</span></span>
+          <span style={{ fontFamily: FONT, fontWeight: 600, fontSize: 22, color: C.text, fontVariantNumeric: 'tabular-nums' }}>{lev.toFixed(1)}<span style={{ color: C.faint, fontSize: 15 }}>×</span></span>
         </div>
-        <input type="range" min="1" max="50" value={lev} onChange={e => onLev && onLev(parseInt(e.target.value, 10))}
+        <input type="range" min="1" max={MAX_LEV} step="0.1" value={lev} onChange={e => onLev && onLev(parseFloat(e.target.value))}
           style={{ width: '100%', height: 4, borderRadius: 2, outline: 'none', cursor: 'pointer', background: `linear-gradient(to right,${C.lime} ${levPct}%, rgba(255,255,255,0.08) ${levPct}%)` }} />
         <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 7 }}>
           <span style={{ fontSize: 9, color: C.ghost }}>1×</span>
-          <span style={{ fontSize: 9, color: C.ghost }}>25×</span>
-          <span style={{ fontSize: 9, color: C.ghost }}>50×</span>
+          <span style={{ fontSize: 9, color: C.ghost }}>1.2×</span>
+          <span style={{ fontSize: 9, color: C.ghost }}>1.4×</span>
         </div>
       </div>
 

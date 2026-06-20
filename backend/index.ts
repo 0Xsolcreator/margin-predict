@@ -2,7 +2,7 @@
 //
 // The frontend does Google sign-in (just UX — the Google account picker, no
 // wallet). Everything else is server-side: the backend holds the zkLogin
-// ephemeral key, builds the ZK proof, and signs + sponsors + executes txns.
+// ephemeral key, builds the ZK proof, and signs + executes txns (user pays gas).
 //
 // Because the backend holds the key, Google sign-in must use a nonce bound to
 // it — so the frontend fetches a nonce first, then signs in, then hands back
@@ -12,36 +12,69 @@
 //   POST /auth/finish { state, jwt }  -> { sessionToken, address }  (backend makes+keeps the ZK proof)
 //   GET  /stats        Bearer         -> on-chain balances
 //   POST /tx           Bearer + { transactionKindBytes } -> { digest }
-//        backend sponsors (gas) + signs (sender, via the held key + proof) + executes.
+//        backend signs (sender, via the held key + proof) + executes; user's account pays gas.
 //
 // Tradeoff: this server IS the key custodian. It can move user funds; protect
 // this process and its memory accordingly.
 
 import crypto from 'node:crypto';
 import fs from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
 import { EnokiClient, EnokiClientError } from '@mysten/enoki';
 import { SuiGrpcClient } from '@mysten/sui/grpc';
+import { GrpcWebFetchTransport } from '@protobuf-ts/grpcweb-transport';
+import { GrpcTransport } from '@protobuf-ts/grpc-transport';
+import { ChannelCredentials } from '@grpc/grpc-js';
 import { Ed25519Keypair } from '@mysten/sui/keypairs/ed25519';
 import { Transaction } from '@mysten/sui/transactions';
 import { getZkLoginSignature } from '@mysten/sui/zklogin';
-import { fromBase64, toBase64 } from '@mysten/sui/utils';
+import { fromBase64 } from '@mysten/sui/utils';
 import type { ZkLoginSignatureInputs } from '@mysten/sui/zklogin';
 import { registerPositionRoutes } from './positions.ts';
 import { registerOracleRoutes } from './oracles.ts';
 import { registerProbabilityRoutes } from './probabilities.ts';
 
 const NETWORK = (process.env.NETWORK ?? 'testnet') as 'mainnet' | 'testnet' | 'devnet';
-const RPC_URL = process.env.SUI_RPC_URL ?? `https://fullnode.${NETWORK}.sui.io:443`;
+const RPC_URL = process.env.SUI_RPC_URL || `https://fullnode.${NETWORK}.sui.io:443`;
 const PORT = parseInt(process.env.PORT ?? '3000', 10);
 const ADDITIONAL_EPOCHS = Number(process.env.ADDITIONAL_EPOCHS ?? 2); // how long the proof/session stays valid (Sui epoch ~24h)
-const ALLOWED_TARGETS = (process.env.SPONSOR_ALLOWED_TARGETS ?? '').split(',').map((s) => s.trim()).filter(Boolean);
 const SECRET = process.env.ENOKI_SECRET_KEY;
 if (!SECRET) throw new Error('ENOKI_SECRET_KEY not set in .env');
 
 const enoki = new EnokiClient({ apiKey: SECRET });
-const sui = new SuiGrpcClient({ network: NETWORK, baseUrl: RPC_URL });
+// Hosted gRPC (Chainstack/QuickNode) want the token as `x-token` metadata. The
+// SuiGrpcClient only forwards baseUrl/fetchInit to its transport and drops a
+// top-level `meta`, so build the transport ourselves to attach default metadata
+// that's merged into every call. If your provider puts the token in the path
+// instead, bake it into SUI_RPC_URL and leave SUI_RPC_TOKEN empty.
+const RPC_TOKEN = process.env.SUI_RPC_TOKEN;
+
+// Logs the full request/response for any non-2xx so grpc-web errors aren't opaque.
+const debugFetch: typeof fetch = async (url, init) => {
+  const res = await fetch(url, init);
+  if (!res.ok) {
+    const body = await res.clone().text().catch(() => '<no body>');
+    const h = init?.headers;
+    const ct = h instanceof Headers ? h.get('content-type') : (h as Record<string, string>)?.['content-type'];
+    console.error(`[grpc] ${res.status} ${res.statusText} ${url}\n  sent content-type: ${ct}\n  response body: ${body}`);
+  }
+  return res;
+};
+
+// Two wire protocols: hosted providers (Chainstack/QuickNode) speak native gRPC
+// over HTTP/2 with an `x-token` header — use GrpcTransport when a token is set.
+// The public fullnode speaks gRPC-web over fetch — use that otherwise.
+const transport = RPC_TOKEN
+  ? new GrpcTransport({
+      host: RPC_URL.replace(/^https?:\/\//, ''), // host:port, no scheme
+      channelCredentials: ChannelCredentials.createSsl(),
+      meta: { 'x-token': RPC_TOKEN },
+    })
+  : new GrpcWebFetchTransport({ baseUrl: RPC_URL, fetch: debugFetch });
+
+const sui = new SuiGrpcClient({ network: NETWORK, transport });
 
 // ponytail: in-memory custody + session store with lazy expiry. The held
 // ephemeral keys are the keys to user funds — for production, move to a KMS /
@@ -55,7 +88,7 @@ const token = () => crypto.randomBytes(32).toString('hex');
 // File-based session persistence so logins survive backend restarts.
 // Contains private keys — never commit sessions.json.
 type PersistedSession = { address: string; kpSecret: string; zkp: ZkLoginSignatureInputs; maxEpoch: number; expires: number };
-const SESSIONS_FILE = new URL('sessions.json', import.meta.url).pathname;
+const SESSIONS_FILE = fileURLToPath(new URL('sessions.json', import.meta.url));
 
 function saveSessions(): void {
   const now = Date.now();
@@ -102,27 +135,20 @@ export function authed(req: { headers: Record<string, unknown> }): Session {
   return getSession(t);
 }
 
-// Sponsor (gas) + sign (sender, via the held zkLogin key) + execute. The user
-// signs nothing client-side; this is the single custodial signing path.
-export async function sponsorExecute(s: Session, transactionKindBytes: string) {
-  const { bytes, digest } = await enoki.createSponsoredTransaction({
-    network: NETWORK,
-    transactionKindBytes,
-    sender: s.address,
-    allowedAddresses: [s.address],
-    ...(ALLOWED_TARGETS.length ? { allowedMoveCallTargets: ALLOWED_TARGETS } : {}),
-  });
-  const { signature: userSignature } = await s.kp.signTransaction(fromBase64(bytes));
+// Sign (sender, via the held zkLogin key) + execute. The user's own zkLogin
+// account pays gas — it must hold SUI. This is the single custodial signing path.
+export async function signExecute(s: Session, txBytes: Uint8Array): Promise<{ digest: string }> {
+  const { signature: userSignature } = await s.kp.signTransaction(txBytes);
   const signature = getZkLoginSignature({ inputs: s.zkp, maxEpoch: s.maxEpoch, userSignature });
-  return enoki.executeSponsoredTransaction({ digest, signature });
+  const result = await sui.executeTransaction({ transaction: txBytes, signatures: [signature] });
+  return { digest: (result.Transaction ?? result.FailedTransaction).digest };
 }
 
-// Build a server-constructed PTB and run it through the custodial signer.
-// onlyTransactionKind: Enoki provides gas; we only ship the command kind.
+// Build a server-constructed PTB (full tx incl. gas) and run it through the signer.
 export async function runTx(s: Session, tx: Transaction): Promise<{ digest: string }> {
   tx.setSenderIfNotSet(s.address);
-  const kind = await tx.build({ client: sui as never, onlyTransactionKind: true });
-  return sponsorExecute(s, toBase64(kind));
+  const bytes = await tx.build({ client: sui as never });
+  return signExecute(s, bytes);
 }
 
 export { sui, NETWORK };
@@ -179,17 +205,16 @@ app.post<{ Body: { state: string; jwt: string } }>('/auth/finish', async (req) =
 
 app.get('/stats', async (req) => {
   const { address } = authed(req);
-  const [{ balance }, { balances }] = await Promise.all([
-    sui.getBalance({ owner: address }),
-    sui.listBalances({ owner: address }),
-  ]);
-  return { address, network: NETWORK, sui: balance.balance, balances };
+  // ponytail: only the SUI balance is used; ListBalances isn't supported on all
+  // gRPC nodes, so return that single coin as the balances list too.
+  const { balance } = await sui.getBalance({ owner: address });
+  return { address, network: NETWORK, sui: balance.balance, balances: [balance] };
 });
 
-// Escape hatch: client-built transaction kind, server-sponsored + signed.
+// Escape hatch: client-built transaction kind, server-signed + executed (user pays gas).
 app.post<{ Body: { transactionKindBytes: string } }>('/tx', async (req) => {
   const s = authed(req);
-  return sponsorExecute(s, req.body.transactionKindBytes);
+  return runTx(s, Transaction.fromKind(fromBase64(req.body.transactionKindBytes)));
 });
 
 registerPositionRoutes(app);
