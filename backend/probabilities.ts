@@ -39,7 +39,7 @@ function decodeU64(bytes: number[] | Uint8Array): bigint {
 
 function rpcClient(): SuiJsonRpcClient {
   const url = process.env.SUI_RPC_URL?.trim() || getJsonRpcFullnodeUrl(NETWORK);
-  return new SuiJsonRpcClient({ url });
+  return new SuiJsonRpcClient({ url, network: NETWORK });
 }
 
 // ── Cache ─────────────────────────────────────────────────────────────────────

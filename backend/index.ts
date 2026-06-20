@@ -71,7 +71,7 @@ const transport = RPC_TOKEN
       channelCredentials: ChannelCredentials.createSsl(),
       meta: { 'x-token': RPC_TOKEN },
     })
-  : new GrpcWebFetchTransport({ baseUrl: RPC_URL, fetch: debugFetch });
+  : new GrpcWebFetchTransport({ baseUrl: RPC_URL, fetch: debugFetch as typeof fetch });
 
 const sui = new SuiGrpcClient({ network: NETWORK, transport });
 
