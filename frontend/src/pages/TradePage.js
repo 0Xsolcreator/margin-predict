@@ -67,7 +67,6 @@ function TradePage() {
 
   const minFixed = oracle ? Number(oracle.oracle?.min_strike ?? 0) : 0;
   const tickFixed = oracle ? Number(oracle.oracle?.tick_size ?? FP) : FP;
-  const tickUsd = tickFixed / FP;
   const minUsd = minFixed / FP;
   const expiry = oracle ? Number(oracle.oracle?.expiry) : null;
 
