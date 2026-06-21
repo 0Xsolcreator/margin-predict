@@ -1,9 +1,11 @@
-/// Background liquidation monitor.
+/// Background position monitor.
 ///
-/// Every LIQUIDATION_POLL_MS, scans tracked positions, reads each one's on-chain
-/// status, and runs liquidatePosition() on any OPEN position that has dropped to
-/// the soft/hard threshold. The liquidation itself (health re-check, flag,
-/// execute) is the same code path the manual API uses.
+/// Every LIQUIDATION_POLL_MS, scans tracked OPEN positions and, for each:
+///   1. settlePosition() — claims the position if its oracle has expired+settled
+///      (returns collateral to the owner). No-op if not settled yet.
+///   2. otherwise liquidatePosition() — if health dropped to the soft/hard
+///      threshold. No-op if healthy.
+/// Both reuse the same code paths as the manual /settle and /liquidate APIs.
 ///
 /// Env:
 ///   LIQUIDATION_MONITOR=off   disable the loop
@@ -14,6 +16,7 @@ import { loadKeypair, createGrpcClient } from './chain/client.js';
 import { readPositionFinancials } from './chain/contract.js';
 import { listPositions } from './store/positions.js';
 import { liquidatePosition } from './liquidation.js';
+import { settlePosition } from './settlement.js';
 
 const OPEN_STATUS = 1;
 
@@ -36,7 +39,18 @@ export function startLiquidationMonitor(app: FastifyInstance): void {
           const { status } = await readPositionFinancials(base, address, positionId);
           if (status !== OPEN_STATUS) continue;
 
-          // oracleId resolves inside liquidatePosition (tracked, else from chain).
+          // Expired+settled oracle → claim (settle). oracleId resolves inside.
+          const settle = await settlePosition(positionId, record.oracleId);
+          if (settle.status === 'settled') {
+            app.log.warn({ positionId, owner: settle.owner, digest: settle.digest }, 'auto-settled expired position');
+            continue;
+          }
+          if (settle.status !== 'not_settled') {
+            app.log.error({ positionId, outcome: settle.status }, 'settlement check did not complete');
+            continue;
+          }
+
+          // Not settled yet → liquidate if unhealthy. No-op if healthy.
           const out = await liquidatePosition(positionId, record.oracleId);
           if (out.status === 'liquidated') {
             app.log.warn(
