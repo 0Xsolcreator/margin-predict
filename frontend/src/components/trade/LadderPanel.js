@@ -5,6 +5,7 @@ const ROWS = 15; // levels above and below current price
 
 function LadderPanel({
   currentPrice = 105432,
+  min = 0,
   step = 1,
   selectedStrike = null,
   onSelectStrike,
@@ -19,7 +20,9 @@ function LadderPanel({
   const dec = step < 1 ? Math.min(6, Math.ceil(-Math.log10(step))) : 0;
   const fmt = p => p.toLocaleString(undefined, { minimumFractionDigits: dec, maximumFractionDigits: dec });
 
-  const currentP = +(Math.round(currentPrice / step) * step).toFixed(dec);
+  // Anchor strikes to the oracle grid (min + k·step), not the live Pyth price, so
+  // every row is a valid on-chain strike. Pyth only chooses which row is centered.
+  const currentP = +(min + Math.round((currentPrice - min) / step) * step).toFixed(dec);
 
   // Fixed 31 rows: ROWS above + current + ROWS below. Probability shown when
   // available, zero bar when not — list never changes length or position.

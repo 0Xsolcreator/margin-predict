@@ -5,6 +5,20 @@ const DBUSDC_DP = 1e6;
 const HF_NONE = '18446744073709551615'; // u64 max = no debt
 
 const fmtUsd = v => v >= 1000 ? '$' + Math.round(v).toLocaleString() : '$' + v.toFixed(v >= 1 ? 3 : 4);
+const fmtSui = v => (Math.abs(v) >= 100 ? v.toFixed(1) : v.toFixed(3));
+
+// Unrealized PnL estimate. ponytail: linear leveraged-exposure proxy
+// (notional × price-return), not the true binary-option mark — good enough to
+// color the card. Upgrade path: have the keeper return the live position value.
+function pnl(p, spot) {
+  if (p.status !== 'OPEN' || !spot || p.entry == null || !p.entry) return null;
+  const stake = Number(p.collateralSui || 0) / SUI_DP;
+  const lev = p.lev || 1;
+  const dirSign = p.dir === 'short' ? -1 : 1;
+  const ret = (spot - p.entry) / p.entry;
+  const profit = stake * lev * ret * dirSign;
+  return { stake, profit, value: stake + profit, pct: stake ? (profit / stake) * 100 : 0, up: profit >= 0 };
+}
 
 const STATUS_CLR = {
   OPEN: C.lime, PENDING_OPEN: C.amber, CLOSED: C.fainter, LIQUIDATED: C.red, CANCELLED: C.fainter,
@@ -23,7 +37,7 @@ function health(bps) {
 
 // The caller's positions from GET /positions, merged with the dir/leverage/strike
 // we stashed locally at bet time (the keeper record doesn't carry them).
-function PositionsPanel({ positions = [], busy = false, onWithdraw, onClose }) {
+function PositionsPanel({ positions = [], spot = 0, busy = false, onWithdraw, onClose }) {
   if (positions.length === 0) {
     return (
       <div style={{ flex: 1, overflowY: 'auto', padding: 20 }}>
@@ -51,7 +65,10 @@ function PositionsPanel({ positions = [], busy = false, onWithdraw, onClose }) {
         const h = health(p.healthFactorBps);
         const pending = p.status === 'PENDING_OPEN';
         const open = p.status === 'OPEN';
-        const bd = h && h.pct <= 25 ? 'rgba(242,120,92,0.3)' : 'rgba(255,255,255,0.08)';
+        const pl = pnl(p, spot);
+        const plClr = pl ? (pl.up ? C.lime : C.red) : C.text;
+        const bd = pl ? (pl.up ? 'rgba(212,245,107,0.3)' : 'rgba(242,120,92,0.3)')
+          : h && h.pct <= 25 ? 'rgba(242,120,92,0.3)' : 'rgba(255,255,255,0.08)';
         return (
           <div key={p.positionId} style={{ border: `1px solid ${bd}`, borderRadius: 12, padding: 16, background: 'rgba(255,255,255,0.015)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
@@ -62,6 +79,23 @@ function PositionsPanel({ positions = [], busy = false, onWithdraw, onClose }) {
               </div>
               <span style={{ fontSize: 10, fontWeight: 600, letterSpacing: 1, color: STATUS_CLR[p.status] || C.faint }}>{p.status}</span>
             </div>
+
+            {pl && (
+              <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 14, padding: '12px 14px', borderRadius: 10, background: pl.up ? 'rgba(212,245,107,0.06)' : 'rgba(242,120,92,0.06)', border: `1px solid ${pl.up ? 'rgba(212,245,107,0.18)' : 'rgba(242,120,92,0.18)'}` }}>
+                <div>
+                  <div style={{ fontSize: 8, color: C.ghost, letterSpacing: 1, marginBottom: 4 }}>POSITION VALUE</div>
+                  <div style={{ fontFamily: FONT, fontWeight: 700, fontSize: 22, lineHeight: 1, fontVariantNumeric: 'tabular-nums', color: plClr }}>
+                    {fmtSui(pl.value)} <span style={{ fontSize: 11, fontWeight: 600, color: C.faint }}>SUI</span>
+                  </div>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '5px 10px', borderRadius: 999, background: plClr, color: C.bg }}>
+                  <span style={{ fontSize: 12 }}>{pl.up ? '▲' : '▼'}</span>
+                  <span style={{ fontFamily: FONT, fontWeight: 700, fontSize: 12, fontVariantNumeric: 'tabular-nums' }}>
+                    {(pl.up ? '+' : '') + fmtSui(pl.profit)} ({(pl.up ? '+' : '') + pl.pct.toFixed(1)}%)
+                  </span>
+                </div>
+              </div>
+            )}
 
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: h ? 12 : 0 }}>
               {stat('STAKE', stake.toFixed(2) + ' SUI', C.dim, 'left')}

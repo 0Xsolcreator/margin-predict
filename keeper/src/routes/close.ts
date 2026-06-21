@@ -18,6 +18,7 @@ import {
   injectPythPrices,
 } from '../chain/client.js';
 import { readPositionFinancials, buildClosePosition } from '../chain/contract.js';
+import { readPositionOracleId } from '../chain/positionOracle.js';
 import { unwindPosition } from '../deepbook/unwind.js';
 import { getPosition, deletePosition } from '../store/positions.js';
 import { executeTransaction } from '../chain/transaction.js';
@@ -27,12 +28,15 @@ export function registerCloseRoute(app: FastifyInstance): void {
     '/positions/:positionId/close',
     async (request, reply) => {
       const { positionId } = request.params;
-      const { oracleId } = request.body ?? {};
-
-      if (!oracleId) return reply.code(400).send({ error: 'oracleId is required' });
 
       const record = getPosition(positionId);
       if (!record) return reply.code(404).send({ error: `Position ${positionId} not tracked` });
+
+      // Use the oracle the position was opened on (baked into its market key),
+      // not whatever oracle is active now — oracles rotate each expiry and a stale
+      // id aborts in assert_key_matches. Tracked at open; read from chain otherwise.
+      const oracleId = record.oracleId ?? await readPositionOracleId(positionId);
+      if (!oracleId) return reply.code(400).send({ error: 'Could not resolve the position oracle' });
 
       const swapPool = getSwapPool();
       if (!swapPool) return reply.code(500).send({ error: 'DUSDC_DBUSDC_POOL_ID not configured' });

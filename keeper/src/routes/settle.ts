@@ -14,6 +14,7 @@ import {
   injectPythPrices,
 } from '../chain/client.js';
 import { readOracleSettled, readPositionFinancials, buildSettlePosition } from '../chain/contract.js';
+import { readPositionOracleId } from '../chain/positionOracle.js';
 import { unwindPosition } from '../deepbook/unwind.js';
 import { getPosition, deletePosition } from '../store/positions.js';
 import { executeTransaction } from '../chain/transaction.js';
@@ -23,12 +24,13 @@ export function registerSettleRoute(app: FastifyInstance): void {
     '/positions/:positionId/settle',
     async (request, reply) => {
       const { positionId } = request.params;
-      const { oracleId } = request.body ?? {};
-
-      if (!oracleId) return reply.code(400).send({ error: 'oracleId is required' });
 
       const record = getPosition(positionId);
       if (!record) return reply.code(404).send({ error: `Position ${positionId} not tracked` });
+
+      // Settle against the position's own oracle, not the currently active one.
+      const oracleId = record.oracleId ?? await readPositionOracleId(positionId);
+      if (!oracleId) return reply.code(400).send({ error: 'Could not resolve the position oracle' });
 
       const swapPool = getSwapPool();
       if (!swapPool) return reply.code(500).send({ error: 'DUSDC_DBUSDC_POOL_ID not configured' });

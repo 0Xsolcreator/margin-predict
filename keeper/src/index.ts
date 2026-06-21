@@ -1,6 +1,7 @@
 import 'dotenv/config';
 import { PORT } from './config.js';
 import { buildApp } from './app.js';
+import { startLiquidationMonitor } from './monitor.js';
 
 const app = buildApp();
 
@@ -10,4 +11,5 @@ app.listen({ port: PORT, host: '0.0.0.0' }, (err, address) => {
     process.exit(1);
   }
   app.log.info(`margin-predict keeper listening on ${address}`);
+  startLiquidationMonitor(app);
 });

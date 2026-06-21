@@ -14,8 +14,14 @@ import * as api from '../api';
 import { usePythPrice } from '../hooks/usePythPrice';
 
 const FP = 1e9;   // oracle prices / strikes are 1e9 fixed-point USD
-const STRIKE_DP = 1e6; // POST /positions strike is 6dp Predict units
 const SUI_DP = 1e9;
+
+// Snap a USD price to the oracle's strike grid and return the raw 1e9 fixed-point
+// strike the contract expects. Off-grid strikes abort with FAILED_ASSERT_STRIKE_PRICE.
+const snapStrikeFixed = (usd, minFixed, tickFixed) => {
+  const idx = Math.round((Math.round(usd * FP) - minFixed) / tickFixed);
+  return Math.round(minFixed + idx * tickFixed);
+};
 
 // Pyth BTC/USD feed — canonical across testnet and mainnet Hermes
 const BTC_PYTH_FEED = '0xe62df6c8b4a85fe1a67db44dc12de5db330f7ac66b72dc658afedf0f4a415b43';
@@ -60,7 +66,10 @@ function TradePage() {
   const spotUsd = pythPrice ?? oracleSpot;
 
   const { probMap, ready: probsReady } = useOracleProbabilities(oracleId, spotUsd);
-  const tickUsd = oracle ? Number(oracle.oracle?.tick_size ?? FP) / FP : 1;
+  const minFixed = oracle ? Number(oracle.oracle?.min_strike ?? 0) : 0;
+  const tickFixed = oracle ? Number(oracle.oracle?.tick_size ?? FP) : FP;
+  const tickUsd = tickFixed / FP;
+  const minUsd = minFixed / FP;
   const expiry = oracle ? Number(oracle.oracle?.expiry) : null;
 
   // authed: balance + positions, polled while signed in
@@ -99,7 +108,7 @@ function TradePage() {
       const res = await api.placeBet({
         oracleId,
         expiry,
-        strike: Math.round(selectedStrike * STRIKE_DP),
+        strike: snapStrikeFixed(selectedStrike, minFixed, tickFixed),
         isUp: dir === 'long',
         collateralSui: amt,
         leverageBps: levToBps(lev),
@@ -159,6 +168,7 @@ function TradePage() {
 
         <LadderPanel
           currentPrice={spotUsd || 1}
+          min={minUsd}
           step={tickUsd || 1}
           selectedStrike={selectedStrike}
           onSelectStrike={selectStrike}
@@ -182,7 +192,7 @@ function TradePage() {
             />
           )}
           {tab === 'positions' && (
-            <PositionsPanel positions={positions} busy={busy} onWithdraw={withdraw} onClose={closePosition} />
+            <PositionsPanel positions={positions} spot={spotUsd} busy={busy} onWithdraw={withdraw} onClose={closePosition} />
           )}
           {tab === 'arena' && (
             <ArenaPanel posCount={positions.length} userPnl={0} />

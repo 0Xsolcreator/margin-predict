@@ -16,6 +16,10 @@ const STORE_PATH = join(DATA_DIR, 'positions.json');
 export interface PositionRecord {
   /** Owner address — receives funds on close / settle / hard liquidation. */
   owner: string;
+  /** Oracle this position trades against — needed to read health / liquidate.
+   * Optional for records written before monitoring existed; those can't be
+   * auto-monitored and must be liquidated via the API with an explicit oracleId. */
+  oracleId?: string;
   updatedAt: string;
 }
 

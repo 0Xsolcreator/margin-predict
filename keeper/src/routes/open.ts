@@ -126,6 +126,7 @@ export function registerOpenRoute(app: FastifyInstance): void {
 
       setPosition(positionId, {
         owner,
+        oracleId,
         updatedAt: new Date().toISOString(),
       });
 
