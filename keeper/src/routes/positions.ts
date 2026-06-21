@@ -5,11 +5,14 @@
 /// GET /positions/:id/health — live health factor from chain
 
 import type { FastifyInstance } from 'fastify';
+import { HF_HARD_BPS, HF_SOFT_BPS } from '../config.js';
 import { loadKeypair, createGrpcClient } from '../chain/client.js';
 import { readHealthFactor, readPositionFinancials } from '../chain/contract.js';
+import { readPositionOracleId } from '../chain/positionOracle.js';
 import { getPosition, listPositions } from '../store/positions.js';
 
 const STATUS_NAMES = ['PENDING_OPEN', 'OPEN', 'CLOSED', 'LIQUIDATED', 'CANCELLED'];
+const OPEN_STATUS = 1;
 
 export function registerPositionRoutes(app: FastifyInstance): void {
   app.get('/positions', async () => {
@@ -31,6 +34,55 @@ export function registerPositionRoutes(app: FastifyInstance): void {
         };
       }),
     );
+  });
+
+  // Public monitor: every OPEN position with its live health, sorted ascending
+  // (closest to liquidation first). `liquidatable` is true at/under the soft
+  // threshold. Heavier than /positions (health read per position) — meant for
+  // liquidator polling, not the trading UI.
+  app.get('/monitor', async () => {
+    const keypair = loadKeypair();
+    const base = createGrpcClient();
+    const address = keypair.toSuiAddress();
+
+    type Row = {
+      positionId: string; owner: string; oracleId: string | null;
+      mode: 'hard' | 'soft' | 'healthy' | 'expired';
+      liquidatable: boolean; healthFactorBps: string | null;
+      marginDebt: string; collateralSui: string; hf: number;
+    };
+    const rows: Row[] = [];
+    for (const [positionId, record] of Object.entries(listPositions())) {
+      try {
+        const { status, marginDebt, collateralSui } = await readPositionFinancials(base, address, positionId);
+        if (status !== OPEN_STATUS) continue;
+
+        const oracleId = record.oracleId ?? (await readPositionOracleId(positionId));
+        let mode: Row['mode'] = 'expired';
+        let liquidatable = false;
+        let healthFactorBps: string | null = null;
+        let hf = Number.POSITIVE_INFINITY; // unreadable/expired sort last
+
+        if (oracleId) {
+          try {
+            const bps = await readHealthFactor(base, address, positionId, oracleId);
+            hf = Number(bps);
+            healthFactorBps = bps.toString();
+            liquidatable = bps <= HF_SOFT_BPS;
+            mode = bps <= HF_HARD_BPS ? 'hard' : bps <= HF_SOFT_BPS ? 'soft' : 'healthy';
+          } catch { /* oracle likely expired/settled — leave as 'expired' */ }
+        }
+
+        rows.push({
+          positionId, owner: record.owner, oracleId: oracleId ?? null,
+          mode, liquidatable, healthFactorBps,
+          marginDebt: marginDebt.toString(), collateralSui: collateralSui.toString(), hf,
+        });
+      } catch { /* skip positions that can't be read this tick */ }
+    }
+
+    rows.sort((a, b) => a.hf - b.hf); // ascending: most at-risk first
+    return rows.map(({ hf, ...r }) => r);
   });
 
   app.get<{ Params: { positionId: string } }>(

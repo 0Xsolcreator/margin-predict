@@ -59,3 +59,8 @@ export const withdrawPosition = (id) =>
 // --- recovery (claw back escrow from stuck pending-open positions) ---
 export const getRecoverable = () => req('/recover', { auth: true });
 export const runRecover = () => req('/recover', { method: 'POST', auth: true });
+
+// --- liquidations (public — anyone can monitor and trigger) ---
+export const getMonitor = () => req('/monitor');
+export const liquidate = (id, oracleId) =>
+  req(`/positions/${id}/liquidate`, { method: 'POST', body: oracleId ? { oracleId } : undefined });

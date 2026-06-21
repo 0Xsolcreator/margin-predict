@@ -114,4 +114,21 @@ export function registerPositionRoutes(app: FastifyInstance): void {
     const { digest } = await runTx(s, tx);
     return { positionId: req.params.id, digest };
   });
+
+  // PUBLIC monitor: every OPEN position with live health, sorted most-at-risk
+  // first; each flags whether it's liquidatable. No session.
+  app.get('/monitor', async () => keeper('GET', '/monitor'));
+
+  // Liquidate: PUBLIC, no session. Anyone can trigger liquidation of an unhealthy
+  // position — the keeper signs it from its own wallet and earns the on-chain
+  // reporter fee. oracleId is optional (the keeper resolves the position's oracle
+  // from chain). Returns 409 if the position is still healthy.
+  app.post<{ Params: { id: string }; Body: { oracleId?: string } }>(
+    '/positions/:id/liquidate',
+    async (req) => {
+      const { id } = req.params;
+      const oracleId = req.body?.oracleId;
+      return keeper('POST', `/positions/${id}/liquidate`, oracleId ? { oracleId } : undefined);
+    },
+  );
 }
