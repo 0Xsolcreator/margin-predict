@@ -37,7 +37,7 @@ function health(bps) {
 
 // The caller's positions from GET /positions, merged with the dir/leverage/strike
 // we stashed locally at bet time (the keeper record doesn't carry them).
-function PositionsPanel({ positions = [], spot = 0, busy = false, onWithdraw, onClose }) {
+function PositionsPanel({ positions = [], spot = 0, busy = false, currentOracleId = null, oracleExpiry = null, now = Date.now(), onWithdraw, onClose, onSettle }) {
   if (positions.length === 0) {
     return (
       <div style={{ flex: 1, overflowY: 'auto', padding: 20 }}>
@@ -65,6 +65,10 @@ function PositionsPanel({ positions = [], spot = 0, busy = false, onWithdraw, on
         const h = health(p.healthFactorBps);
         const pending = p.status === 'PENDING_OPEN';
         const open = p.status === 'OPEN';
+        // Position is on an expired oracle if it belongs to a different (older) oracle,
+        // or if the current oracle itself has expired.
+        const oracleExpired = (p.oracleId && currentOracleId && p.oracleId !== currentOracleId)
+          || (oracleExpiry != null && now > oracleExpiry);
         const pl = pnl(p, spot);
         const plClr = pl ? (pl.up ? C.lime : C.red) : C.text;
         const bd = pl ? (pl.up ? 'rgba(212,245,107,0.3)' : 'rgba(242,120,92,0.3)')
@@ -120,8 +124,11 @@ function PositionsPanel({ positions = [], spot = 0, busy = false, onWithdraw, on
                 {pending && (
                   <button onClick={() => onWithdraw && onWithdraw(p.positionId)} disabled={busy} className="wbtn" style={{ flex: 1, height: 32, background: 'rgba(212,245,107,0.1)', border: '1px solid rgba(212,245,107,0.25)', borderRadius: 8, cursor: busy ? 'default' : 'pointer', fontFamily: FONT, fontSize: 10, fontWeight: 600, color: C.lime, letterSpacing: 1, opacity: busy ? 0.5 : 1 }}>Withdraw escrow</button>
                 )}
-                {open && (
-                  <button onClick={() => onClose && onClose(p.positionId)} disabled={busy} className="ghost" style={{ flex: 1, height: 32, background: 'none', border: `1px solid ${C.line2}`, borderRadius: 8, cursor: busy ? 'default' : 'pointer', fontFamily: FONT, fontSize: 10, fontWeight: 600, color: C.fainter, letterSpacing: 1, opacity: busy ? 0.5 : 1 }}>Close position</button>
+                {open && !oracleExpired && (
+                  <button onClick={() => onClose && onClose(p.positionId, p.oracleId)} disabled={busy} className="ghost" style={{ flex: 1, height: 32, background: 'none', border: `1px solid ${C.line2}`, borderRadius: 8, cursor: busy ? 'default' : 'pointer', fontFamily: FONT, fontSize: 10, fontWeight: 600, color: C.fainter, letterSpacing: 1, opacity: busy ? 0.5 : 1 }}>Close position</button>
+                )}
+                {open && oracleExpired && (
+                  <button onClick={() => onSettle && onSettle(p.positionId, p.oracleId)} disabled={busy} className="wbtn" style={{ flex: 1, height: 32, background: 'rgba(212,245,107,0.1)', border: '1px solid rgba(212,245,107,0.25)', borderRadius: 8, cursor: busy ? 'default' : 'pointer', fontFamily: FONT, fontSize: 10, fontWeight: 600, color: C.lime, letterSpacing: 1, opacity: busy ? 0.5 : 1 }}>Claim settlement</button>
                 )}
               </div>
             )}

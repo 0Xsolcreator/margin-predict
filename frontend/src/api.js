@@ -53,6 +53,8 @@ export const getPosition = (id, oracleId) =>
 export const placeBet = (body) => req('/positions', { method: 'POST', body, auth: true });
 export const closePosition = (id, oracleId) =>
   req(`/positions/${id}/close`, { method: 'POST', body: { oracleId }, auth: true });
+export const settlePosition = (id, oracleId) =>
+  req(`/positions/${id}/settle`, { method: 'POST', body: { oracleId }, auth: true });
 export const withdrawPosition = (id) =>
   req(`/positions/${id}/withdraw`, { method: 'POST', auth: true });
 

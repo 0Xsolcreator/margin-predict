@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { getOracleProbabilities } from '../api';
 
-const POLL_MS  = 8_000;
+const POLL_MS  = 30_000;
 const MIN_PROB = 0.001;
 
 export function useOracleProbabilities(oracleId, strikes) {

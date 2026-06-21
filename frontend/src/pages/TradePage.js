@@ -98,7 +98,7 @@ function TradePage() {
 
   useEffect(() => { refresh(); }, [refresh, address]);
   useEffect(() => {
-    const t = setInterval(refresh, 6000);
+    const t = setInterval(refresh, 30000);
     return () => clearInterval(t);
   }, [refresh]);
 
@@ -131,10 +131,19 @@ function TradePage() {
     setBusy(false);
   };
 
-  const closePosition = async id => {
-    if (!oracleId) return;
+  const closePosition = async (id, posOracleId) => {
+    const oid = posOracleId || oracleId;
+    if (!oid) return;
     setBusy(true); setError('');
-    try { await api.closePosition(id, oracleId); await refresh(); }
+    try { await api.closePosition(id, oid); await refresh(); }
+    catch (e) { setError(e.message); }
+    setBusy(false);
+  };
+
+  const settlePosition = async (id, posOracleId) => {
+    const oid = posOracleId || oracleId;
+    setBusy(true); setError('');
+    try { await api.settlePosition(id, oid); await refresh(); }
     catch (e) { setError(e.message); }
     setBusy(false);
   };
@@ -203,7 +212,7 @@ function TradePage() {
             />
           )}
           {tab === 'positions' && (
-            <PositionsPanel positions={positions} spot={spotUsd} busy={busy} onWithdraw={withdraw} onClose={closePosition} />
+            <PositionsPanel positions={positions} spot={spotUsd} busy={busy} currentOracleId={oracleId} oracleExpiry={expiry} now={now} onWithdraw={withdraw} onClose={closePosition} onSettle={settlePosition} />
           )}
           {tab === 'arena' && (
             <ArenaPanel posCount={positions.length} userPnl={0} />

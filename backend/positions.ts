@@ -105,6 +105,17 @@ export function registerPositionRoutes(app: FastifyInstance): void {
     },
   );
 
+  // Settle: redeem a position on an expired+settled oracle. Keeper checks on-chain
+  // settlement status; returns 409 if the oracle hasn't settled yet.
+  app.post<{ Params: { id: string }; Body: { oracleId?: string } }>(
+    '/positions/:id/settle',
+    async (req) => {
+      authed(req);
+      const { id } = req.params;
+      return keeper('POST', `/positions/${id}/settle`, { oracleId: req.body?.oracleId });
+    },
+  );
+
   // Withdraw / cancel: claw back escrowed SUI on a stuck pending-open, or cancel
   // a pending close. On-chain enforces the 120s timeout.
   app.post<{ Params: { id: string } }>('/positions/:id/withdraw', async (req) => {
