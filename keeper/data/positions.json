@@ -7,5 +7,10 @@
     "owner": "0xf6a4420fe25cc2a4d80cf798dff718cf1aabcd539bfd07f55b12acdf0d599a87",
     "oracleId": "0x04d50b93c01378973607d3f7fdb560df1351060fca651f887c5a2aff5706af37",
     "updatedAt": "2026-06-21T13:24:43.867Z"
+  },
+  "0xabefae1a348fdc8f681f609b90ad92a0b88065814b388c83de41aee623be2c86": {
+    "owner": "0x8beb8242a1f6290ad44ca5d2f7e3ac569745239345cc42847df17446ec8f5880",
+    "oracleId": "0x535b0b11829ab1ae1eddbf478146f1ff46c9039410d75784d4af5ce7553d94a1",
+    "updatedAt": "2026-06-21T14:56:02.559Z"
   }
 }

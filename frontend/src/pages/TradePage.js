@@ -53,7 +53,7 @@ function TradePage() {
   const [now, setNow] = useState(Date.now());
 
   const [selectedStrike, setSelectedStrike] = useState(null);
-  const [dir, setDir] = useState('long');
+  const [dir, setDir] = useState('up');
   const [lev, setLev] = useState(1.2);
   const [amt, setAmt] = useState(50);
   const [tab, setTab] = useState('bet');
@@ -65,12 +65,21 @@ function TradePage() {
   // Prefer the live Pyth price; fall back to the last on-chain oracle value
   const spotUsd = pythPrice ?? oracleSpot;
 
-  const { probMap, ready: probsReady } = useOracleProbabilities(oracleId, spotUsd);
   const minFixed = oracle ? Number(oracle.oracle?.min_strike ?? 0) : 0;
   const tickFixed = oracle ? Number(oracle.oracle?.tick_size ?? FP) : FP;
-  const tickUsd = tickFixed / FP;
   const minUsd = minFixed / FP;
   const expiry = oracle ? Number(oracle.oracle?.expiry) : null;
+
+  const LADDER_STEP = 50;
+  const LADDER_ROWS = 15;
+  const ladderCenter = spotUsd
+    ? +(minUsd + Math.round((spotUsd - minUsd) / LADDER_STEP) * LADDER_STEP).toFixed(0)
+    : null;
+  const ladderStrikes = ladderCenter
+    ? Array.from({ length: LADDER_ROWS * 2 + 1 }, (_, i) => ladderCenter + (LADDER_ROWS - i) * LADDER_STEP)
+    : [];
+
+  const { probMap, ready: probsReady } = useOracleProbabilities(oracleId, ladderStrikes);
 
   // authed: balance + positions, polled while signed in
   const refresh = useCallback(async () => {
@@ -88,7 +97,7 @@ function TradePage() {
 
   useEffect(() => { refresh(); }, [refresh, address]);
   useEffect(() => {
-    const t = setInterval(refresh, 6000);
+    const t = setInterval(refresh, 30000);
     return () => clearInterval(t);
   }, [refresh]);
 
@@ -109,7 +118,7 @@ function TradePage() {
         oracleId,
         expiry,
         strike: snapStrikeFixed(selectedStrike, minFixed, tickFixed),
-        isUp: dir === 'long',
+        isUp: dir === 'up',
         collateralSui: amt,
         leverageBps: levToBps(lev),
       });
@@ -121,10 +130,19 @@ function TradePage() {
     setBusy(false);
   };
 
-  const closePosition = async id => {
-    if (!oracleId) return;
+  const closePosition = async (id, posOracleId) => {
+    const oid = posOracleId || oracleId;
+    if (!oid) return;
     setBusy(true); setError('');
-    try { await api.closePosition(id, oracleId); await refresh(); }
+    try { await api.closePosition(id, oid); await refresh(); }
+    catch (e) { setError(e.message); }
+    setBusy(false);
+  };
+
+  const settlePosition = async (id, posOracleId) => {
+    const oid = posOracleId || oracleId;
+    setBusy(true); setError('');
+    try { await api.settlePosition(id, oid); await refresh(); }
     catch (e) { setError(e.message); }
     setBusy(false);
   };
@@ -169,7 +187,8 @@ function TradePage() {
         <LadderPanel
           currentPrice={spotUsd || 1}
           min={minUsd}
-          step={tickUsd || 1}
+          step={50}
+          dir={dir}
           selectedStrike={selectedStrike}
           onSelectStrike={selectStrike}
           loading={pythPrice == null}
@@ -192,7 +211,7 @@ function TradePage() {
             />
           )}
           {tab === 'positions' && (
-            <PositionsPanel positions={positions} spot={spotUsd} busy={busy} onWithdraw={withdraw} onClose={closePosition} />
+            <PositionsPanel positions={positions} spot={spotUsd} busy={busy} currentOracleId={oracleId} oracleExpiry={expiry} now={now} onWithdraw={withdraw} onClose={closePosition} onSettle={settlePosition} />
           )}
           {tab === 'arena' && (
             <ArenaPanel posCount={positions.length} userPnl={0} />

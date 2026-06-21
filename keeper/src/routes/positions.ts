@@ -27,6 +27,7 @@ export function registerPositionRoutes(app: FastifyInstance): void {
         return {
           positionId,
           owner: record.owner,
+          oracleId: record.oracleId ?? null,
           updatedAt: record.updatedAt,
           status: STATUS_NAMES[status] ?? status,
           marginDebt: marginDebt.toString(),
@@ -99,6 +100,7 @@ export function registerPositionRoutes(app: FastifyInstance): void {
       return {
         positionId,
         owner: record.owner,
+        oracleId: record.oracleId ?? null,
         updatedAt: record.updatedAt,
         status: STATUS_NAMES[status] ?? status,
         marginDebt: marginDebt.toString(),

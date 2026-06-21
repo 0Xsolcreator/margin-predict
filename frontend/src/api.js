@@ -43,8 +43,8 @@ export async function authFinish(state, jwt) {
 
 // --- data ---
 export const getStats = () => req('/stats', { auth: true });
-export const getOracleProbabilities = (oracleId, spot) =>
-  req(`/oracles/${oracleId}/probabilities?spot=${Math.round(spot)}`);
+export const getOracleProbabilities = (oracleId, strikes) =>
+  req(`/oracles/${oracleId}/probabilities?strikes=${strikes.join(',')}`);
 export const listOracles = (all = false) => req(`/oracles${all ? '?all=1' : ''}`);
 export const getOracle = (id) => req(`/oracles/${id}`);
 export const listPositions = () => req('/positions', { auth: true });
@@ -53,6 +53,8 @@ export const getPosition = (id, oracleId) =>
 export const placeBet = (body) => req('/positions', { method: 'POST', body, auth: true });
 export const closePosition = (id, oracleId) =>
   req(`/positions/${id}/close`, { method: 'POST', body: { oracleId }, auth: true });
+export const settlePosition = (id, oracleId) =>
+  req(`/positions/${id}/settle`, { method: 'POST', body: { oracleId }, auth: true });
 export const withdrawPosition = (id) =>
   req(`/positions/${id}/withdraw`, { method: 'POST', auth: true });
 

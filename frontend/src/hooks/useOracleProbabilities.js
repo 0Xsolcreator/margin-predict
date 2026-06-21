@@ -1,19 +1,19 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { getOracleProbabilities } from '../api';
 
-const POLL_MS  = 8_000;
-const MIN_PROB = 0.05;
+const POLL_MS  = 30_000;
+const MIN_PROB = 0.001;
 
-export function useOracleProbabilities(oracleId, spotUsd) {
+export function useOracleProbabilities(oracleId, strikes) {
   const [probMap, setProbMap] = useState({});
   const [ready, setReady]     = useState(false);
-  const spotRef = useRef(spotUsd);
-  spotRef.current = spotUsd;
+  const strikesRef = useRef(strikes);
+  strikesRef.current = strikes;
 
   const doFetch = useCallback(async () => {
-    if (!oracleId || !spotRef.current) return;
+    if (!oracleId || !strikesRef.current?.length) return;
     try {
-      const { probabilities } = await getOracleProbabilities(oracleId, spotRef.current);
+      const { probabilities } = await getOracleProbabilities(oracleId, strikesRef.current);
 
       // Merge into the existing map so strides outside the new window keep
       // their last known probability instead of dropping to zero.
