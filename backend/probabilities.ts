@@ -101,14 +101,14 @@ async function probeOne(
 export function registerProbabilityRoutes(app: FastifyInstance): void {
   app.get<{
     Params: { oracleId: string };
-    Querystring: { spot?: string };
+    Querystring: { strikes?: string };
   }>('/oracles/:oracleId/probabilities', async (req, reply) => {
     const { oracleId } = req.params;
 
     // Fetch oracle grid params from indexer
     const stateRes = await fetch(`${INDEXER}/oracles/${oracleId}/state`);
     if (!stateRes.ok) return reply.code(502).send({ error: 'Failed to fetch oracle state' });
-    const { oracle, latest_price } = await stateRes.json() as {
+    const { oracle } = await stateRes.json() as {
       oracle: { min_strike: number; tick_size: number; expiry: number };
       latest_price: { spot: number } | null;
     };
@@ -119,23 +119,22 @@ export function registerProbabilityRoutes(app: FastifyInstance): void {
     const tickUsd   = tickFixed / FLOAT_SCALE;
     const expiry    = BigInt(oracle.expiry);
 
-    const rawSpot = req.query.spot ? parseFloat(req.query.spot) : null;
-    const spotUsd = rawSpot ?? (latest_price ? latest_price.spot / FLOAT_SCALE : null);
-    if (spotUsd == null) return reply.code(422).send({ error: 'spot price unavailable' });
+    if (!req.query.strikes) return reply.code(422).send({ error: 'strikes param required' });
 
-    // Snap spot to the tick grid and use as center of the query window
-    const centerIdx = Math.round((spotUsd - minUsd) / tickUsd);
-    const cacheKey = `${oracleId}:${centerIdx}`;
+    // Parse the explicit strike list sent by the frontend ladder
+    const usdPrices = req.query.strikes.split(',').map(Number).filter(v => !isNaN(v) && v > 0);
+    if (usdPrices.length === 0) return reply.code(422).send({ error: 'no valid strikes' });
+
+    const cacheKey = `${oracleId}:${req.query.strikes}`;
     const hit = cacheGet(cacheKey);
     if (hit) return { probabilities: hit };
 
-    // Enumerate ±WINDOW ticks, clamped to the oracle's grid bounds
-    const strikes: bigint[] = [];
-    for (let i = -WINDOW; i <= WINDOW; i++) {
-      const idx = centerIdx + i;
-      if (idx < 0 || idx >= GRID_TICKS) continue;
-      strikes.push(BigInt(Math.round(minFixed + idx * tickFixed)));
-    }
+    // Snap each USD price to the nearest oracle tick
+    const strikes: bigint[] = usdPrices.map(usd => {
+      const idx = Math.round((usd - minUsd) / tickUsd);
+      const clamped = Math.max(0, Math.min(GRID_TICKS - 1, idx));
+      return BigInt(Math.round(minFixed + clamped * tickFixed));
+    });
 
     // Build flat job list: [up₀, down₀, up₁, down₁, ...]
     type Job = { strikeFixed: bigint; dir: 'up' | 'down' };
@@ -158,8 +157,8 @@ export function registerProbabilityRoutes(app: FastifyInstance): void {
     }
 
     // Pair results back to strikes — jobs are interleaved [up, down] per strike
-    const probabilities: ProbEntry[] = strikes.map((s, i) => ({
-      strike: Number(s) / FLOAT_SCALE,
+    const probabilities: ProbEntry[] = usdPrices.map((usd, i) => ({
+      strike: usd,
       up:   flat[i * 2]     ?? null,
       down: flat[i * 2 + 1] ?? null,
     }));

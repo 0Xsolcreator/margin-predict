@@ -23,10 +23,10 @@ function BetPanel({
     );
   }
 
-  const isLong = dir === 'long';
+  const isUp = dir === 'up';
   const dist = selectedStrike - Math.round(currentPrice);
   const notional = amt * lev;
-  const liqPrice = isLong ? currentPrice * (1 - 1 / lev) : currentPrice * (1 + 1 / lev);
+  const liqPrice = isUp ? currentPrice * (1 - 1 / lev) : currentPrice * (1 + 1 / lev);
   const pd = Math.abs(selectedStrike - currentPrice);
   const est = pd ? (amt * lev * pd / currentPrice) : 0;
   const levPct = ((lev - 1) / (MAX_LEV - 1) * 100).toFixed(1);
@@ -55,14 +55,14 @@ function BetPanel({
         <div style={{ display: 'flex', gap: 10, marginTop: 11, alignItems: 'center' }}>
           <span style={{ fontSize: 10, color: C.dim }}>{distLabel}</span>
           <span style={{ width: 3, height: 3, borderRadius: '50%', background: '#3a3a3c', flexShrink: 0 }} />
-          <span style={{ fontSize: 10, color: isLong ? C.lime : C.red }}>{isLong ? 'long' : 'short'} target</span>
+          <span style={{ fontSize: 10, color: isUp ? C.lime : C.red }}>{isUp ? 'up' : 'down'} target</span>
         </div>
       </div>
 
       {/* direction */}
       <div style={{ display: 'flex', gap: 4, padding: 4, background: 'rgba(255,255,255,0.035)', border: `1px solid ${C.line2}`, borderRadius: 12 }}>
-        <button onClick={() => onDir && onDir('long')} className="dir" style={{ flex: 1, height: 38, borderRadius: 8, border: 'none', background: isLong ? 'rgba(212,245,107,0.14)' : 'transparent', cursor: 'pointer', fontFamily: FONT, fontWeight: 600, fontSize: 12, color: isLong ? C.lime : C.fainter, letterSpacing: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>▲ Long</button>
-        <button onClick={() => onDir && onDir('short')} className="dir" style={{ flex: 1, height: 38, borderRadius: 8, border: 'none', background: !isLong ? 'rgba(242,120,92,0.14)' : 'transparent', cursor: 'pointer', fontFamily: FONT, fontWeight: 600, fontSize: 12, color: !isLong ? C.red : C.fainter, letterSpacing: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>▼ Short</button>
+        <button onClick={() => onDir && onDir('up')} className="dir" style={{ flex: 1, height: 38, borderRadius: 8, border: 'none', background: isUp ? 'rgba(212,245,107,0.14)' : 'transparent', cursor: 'pointer', fontFamily: FONT, fontWeight: 600, fontSize: 12, color: isUp ? C.lime : C.fainter, letterSpacing: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>▲ Up</button>
+        <button onClick={() => onDir && onDir('down')} className="dir" style={{ flex: 1, height: 38, borderRadius: 8, border: 'none', background: !isUp ? 'rgba(242,120,92,0.14)' : 'transparent', cursor: 'pointer', fontFamily: FONT, fontWeight: 600, fontSize: 12, color: !isUp ? C.red : C.fainter, letterSpacing: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>▼ Down</button>
       </div>
 
       {/* leverage */}

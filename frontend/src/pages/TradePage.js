@@ -53,7 +53,7 @@ function TradePage() {
   const [now, setNow] = useState(Date.now());
 
   const [selectedStrike, setSelectedStrike] = useState(null);
-  const [dir, setDir] = useState('long');
+  const [dir, setDir] = useState('up');
   const [lev, setLev] = useState(1.2);
   const [amt, setAmt] = useState(50);
   const [tab, setTab] = useState('bet');
@@ -65,12 +65,22 @@ function TradePage() {
   // Prefer the live Pyth price; fall back to the last on-chain oracle value
   const spotUsd = pythPrice ?? oracleSpot;
 
-  const { probMap, ready: probsReady } = useOracleProbabilities(oracleId, spotUsd);
   const minFixed = oracle ? Number(oracle.oracle?.min_strike ?? 0) : 0;
   const tickFixed = oracle ? Number(oracle.oracle?.tick_size ?? FP) : FP;
   const tickUsd = tickFixed / FP;
   const minUsd = minFixed / FP;
   const expiry = oracle ? Number(oracle.oracle?.expiry) : null;
+
+  const LADDER_STEP = 50;
+  const LADDER_ROWS = 15;
+  const ladderCenter = spotUsd
+    ? +(minUsd + Math.round((spotUsd - minUsd) / LADDER_STEP) * LADDER_STEP).toFixed(0)
+    : null;
+  const ladderStrikes = ladderCenter
+    ? Array.from({ length: LADDER_ROWS * 2 + 1 }, (_, i) => ladderCenter + (LADDER_ROWS - i) * LADDER_STEP)
+    : [];
+
+  const { probMap, ready: probsReady } = useOracleProbabilities(oracleId, ladderStrikes);
 
   // authed: balance + positions, polled while signed in
   const refresh = useCallback(async () => {
@@ -109,7 +119,7 @@ function TradePage() {
         oracleId,
         expiry,
         strike: snapStrikeFixed(selectedStrike, minFixed, tickFixed),
-        isUp: dir === 'long',
+        isUp: dir === 'up',
         collateralSui: amt,
         leverageBps: levToBps(lev),
       });
@@ -169,7 +179,8 @@ function TradePage() {
         <LadderPanel
           currentPrice={spotUsd || 1}
           min={minUsd}
-          step={tickUsd || 1}
+          step={50}
+          dir={dir}
           selectedStrike={selectedStrike}
           onSelectStrike={selectStrike}
           loading={pythPrice == null}
