@@ -12,6 +12,53 @@ gsap.registerPlugin(ScrollToPlugin);
 const YEAR = new Date().getFullYear();
 
 const MARKUP = `
+  <style>
+    @media (max-width: 768px) {
+      /* NAV */
+      .nm-links { display: none !important; }
+
+      /* HERO */
+      #top > div { padding: 56px 20px 32px !important; }
+      #top h1 { font-size: clamp(36px, 10vw, 92px) !important; letter-spacing: -1px !important; }
+      .hero-cta-row { flex-direction: column !important; align-items: stretch !important; }
+      .hero-cta-row > * { justify-content: center !important; }
+      .hero-frame-inner { height: 220px !important; }
+      .hero-sidebar { display: none !important; }
+
+      /* STAT BAND */
+      #stat > div { grid-template-columns: repeat(2, 1fr) !important; padding: 32px 20px !important; }
+
+      /* HOW IT WORKS */
+      #how > div { padding: 64px 20px !important; }
+      #how h2 { font-size: clamp(28px, 8vw, 52px) !important; }
+      .how-grid { grid-template-columns: 1fr !important; }
+
+      /* FEATURES */
+      #features > div { padding-left: 20px !important; padding-right: 20px !important; }
+      #features h2 { font-size: clamp(28px, 8vw, 52px) !important; letter-spacing: -1px !important; }
+      .feat-grid { grid-template-columns: 1fr !important; }
+
+      /* ARENA */
+      #arena > div { grid-template-columns: 1fr !important; padding-left: 20px !important; padding-right: 20px !important; }
+      #arena h2 { font-size: clamp(26px, 7vw, 48px) !important; }
+      .arena-board { display: none !important; }
+
+      /* POWERED BY */
+      #powered-by > div { padding: 40px 20px !important; gap: 20px !important; }
+      .pbrand-sep { display: none !important; }
+
+      /* CTA */
+      #cta-section .rv { padding: 72px 20px !important; }
+      #cta-section h2 { font-size: clamp(36px, 10vw, 72px) !important; }
+
+      /* FOOTER */
+      #footer > div { padding: 40px 20px 24px !important; border-radius: 18px !important; }
+      .footer-grid { grid-template-columns: 1fr !important; gap: 28px !important; }
+      .footer-nl { padding: 22px 16px 18px !important; }
+      .footer-links { grid-template-columns: repeat(2, 1fr) !important; gap: 20px !important; }
+    }
+  </style>
+
   <!-- NAV -->
   <div style="position:sticky;top:0;z-index:50;backdrop-filter:blur(14px);background:rgba(10,10,11,0.72);border-bottom:1px solid rgba(255,255,255,0.06)">
     <div style="max-width:1180px;margin:0 auto;height:70px;padding:0 32px;display:flex;align-items:center;gap:14px">
@@ -22,7 +69,7 @@ const MARKUP = `
         <span style="font-weight:600;font-size:19px;letter-spacing:5px;color:#f4f4ef;padding-left:2px">STRIKE</span>
       </a>
       <div style="flex:1"></div>
-      <div style="display:flex;align-items:center;gap:34px;margin-right:8px">
+      <div class="nm-links" style="display:flex;align-items:center;gap:34px;margin-right:8px">
         <a href="#how" class="nlink" style="font-size:13px;font-weight:500;color:#9a9a96;letter-spacing:.3px">How it works</a>
         <a href="#features" class="nlink" style="font-size:13px;font-weight:500;color:#9a9a96;letter-spacing:.3px">Features</a>
         <a href="#arena" class="nlink" style="font-size:13px;font-weight:500;color:#9a9a96;letter-spacing:.3px">Arena</a>
@@ -51,7 +98,7 @@ const MARKUP = `
 
       <p class="rv" data-d="120" style="max-width:480px;font-size:15px;line-height:1.65;color:#9a9a96;font-weight:400;margin-bottom:38px;text-wrap:pretty">Pick a BTC target. Size it up to 5&times; via DeepBook Margin. Oracle settles on-chain &mdash; no order books, no counterparty.</p>
 
-      <div class="rv" data-d="180" style="display:flex;align-items:center;gap:14px;margin-bottom:14px">
+      <div class="rv hero-cta-row" data-d="180" style="display:flex;align-items:center;gap:14px;margin-bottom:14px">
         <a href="/app" class="lpill" style="display:flex;align-items:center;gap:9px;height:54px;padding:0 30px;background:#d4f56b;border-radius:999px;font-weight:700;font-size:15px;color:#0a0a0b;letter-spacing:.5px;box-shadow:0 6px 28px rgba(212,245,107,.24)">Launch app <span style="font-size:16px">&rarr;</span></a>
         <a href="#how" class="gpill" style="display:flex;align-items:center;height:54px;padding:0 26px;border:1px solid rgba(255,255,255,.14);border-radius:999px;font-weight:600;font-size:15px;color:#c8c8c2">How it works &darr;</a>
       </div>
@@ -65,7 +112,7 @@ const MARKUP = `
           <span style="width:10px;height:10px;border-radius:50%;background:#3a3a3c"></span>
           <div style="flex:1;display:flex;justify-content:center"><span style="font-size:11px;color:#5a5a58;letter-spacing:1px">app.strike.markets</span></div>
         </div>
-        <div style="display:flex;height:368px">
+        <div class="hero-frame-inner" style="display:flex;height:368px">
           <div style="flex:1;min-width:0;display:flex;flex-direction:column;padding:18px 20px 12px">
             <div style="display:flex;align-items:flex-end;gap:14px;margin-bottom:4px">
               <div style="text-align:left">
@@ -78,7 +125,7 @@ const MARKUP = `
               <canvas id="heroChart" style="display:block;position:absolute;inset:0;width:100%;height:100%"></canvas>
             </div>
           </div>
-          <div style="width:228px;flex-shrink:0;border-left:1px solid rgba(255,255,255,.06);padding:18px;display:flex;flex-direction:column;gap:14px;text-align:left">
+          <div class="hero-sidebar" style="width:228px;flex-shrink:0;border-left:1px solid rgba(255,255,255,.06);padding:18px;display:flex;flex-direction:column;gap:14px;text-align:left">
             <div>
               <div style="font-size:9px;color:#7d7d7a;letter-spacing:2px;margin-bottom:7px">TARGET STRIKE</div>
               <div style="font-family:'Doto',monospace;font-weight:600;font-size:30px;color:#d4f56b;line-height:1">$106,800</div>
@@ -121,7 +168,7 @@ const MARKUP = `
         <div style="font-family:'Pixelify Sans',sans-serif;font-size:13px;letter-spacing:3px;color:#7d8a52;margin-bottom:16px">HOW IT WORKS</div>
         <h2 style="font-weight:700;font-size:52px;line-height:1.02;letter-spacing:-1.5px">Three taps to a position.</h2>
       </div>
-      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:24px">
+      <div class="how-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:24px">
         <div class="rv wcard" data-d="0" style="display:flex;flex-direction:column;border:1px solid rgba(255,255,255,.07);border-radius:18px;padding:34px 30px 0;background:linear-gradient(180deg,#0e0f08,#0b0b0c);overflow:hidden">
           <div style="font-family:'Doto',monospace;font-weight:700;font-size:46px;color:#d4f56b;line-height:1;margin-bottom:22px">01</div>
           <div style="font-size:21px;font-weight:600;margin-bottom:12px;letter-spacing:-.3px">Pick your strike</div>
@@ -196,7 +243,7 @@ const MARKUP = `
         <div style="font-family:'Pixelify Sans',sans-serif;font-size:13px;letter-spacing:3px;color:#7d8a52;margin-bottom:16px">BUILT FOR THE DEGEN IN YOU</div>
         <h2 style="font-weight:700;font-size:52px;line-height:1.02;letter-spacing:-1.5px;text-wrap:balance">Fast feed. Fair settlement.<br>Pure conviction.</h2>
       </div>
-      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:24px">
+      <div class="feat-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:24px">
         <div class="rv wcard" data-d="0" style="display:flex;flex-direction:column;border:1px solid rgba(255,255,255,.07);border-radius:18px;padding:36px 30px 0;background:rgba(255,255,255,.015);overflow:hidden">
           <div style="font-size:21px;font-weight:600;margin-bottom:12px;letter-spacing:-.3px">Oracle-settled</div>
           <div style="font-size:14px;line-height:1.65;color:#9a9a96">Every round closes on a tamper-proof on-chain price feed. No trading desk, no spread games, no last-look.</div>
@@ -274,7 +321,7 @@ const MARKUP = `
         <p style="font-size:16px;line-height:1.65;color:#9a9a96;margin-bottom:30px;max-width:440px">Every position you settle moves you up the live rankings. Stack wins, run your streak, and put your name where the whole arena can see it.</p>
         <a href="/app" class="lpill" style="display:inline-flex;align-items:center;gap:9px;height:50px;padding:0 26px;background:#d4f56b;border-radius:999px;font-weight:700;font-size:14px;color:#0a0a0b;letter-spacing:.5px">Enter the Arena <span style="font-size:15px">&rarr;</span></a>
       </div>
-      <div class="rv" data-d="120" style="border:1px solid rgba(255,255,255,.08);border-radius:18px;background:linear-gradient(180deg,#0e0f08,#0b0b0c);padding:14px 8px 10px">
+      <div class="rv arena-board" data-d="120" style="border:1px solid rgba(255,255,255,.08);border-radius:18px;background:linear-gradient(180deg,#0e0f08,#0b0b0c);padding:14px 8px 10px">
         <div style="font-family:'Pixelify Sans',sans-serif;font-size:12px;color:#7d7d7a;letter-spacing:2px;padding:10px 18px 14px">TOP TRADERS &middot; LIVE</div>
         ${[
           { rank: '01', medal: '\u{1F947}', name: 'APEX_BULL', trades: 234, win: '76%', pnl: '48,234', rankClr: '#d4f56b' },
@@ -316,7 +363,7 @@ const MARKUP = `
           <span style="font-size:16px;font-weight:600;color:#c8c8c2;letter-spacing:.5px">Sui</span>
         </div>
 
-        <div style="width:1px;height:32px;background:rgba(255,255,255,.08)"></div>
+        <div class="pbrand-sep" style="width:1px;height:32px;background:rgba(255,255,255,.08)"></div>
 
         <!-- DeepBook — official "D" icon mark from deepbook.tech nav -->
         <div class="pbrand" style="display:flex;align-items:center;gap:12px">
@@ -326,7 +373,7 @@ const MARKUP = `
           <span style="font-size:16px;font-weight:600;color:#c8c8c2;letter-spacing:.5px">DeepBook</span>
         </div>
 
-        <div style="width:1px;height:32px;background:rgba(255,255,255,.08)"></div>
+        <div class="pbrand-sep" style="width:1px;height:32px;background:rgba(255,255,255,.08)"></div>
 
         <!-- Enoki — official icon from enoki.mystenlabs.com favicon -->
         <div class="pbrand" style="display:flex;align-items:center;gap:12px">
@@ -338,7 +385,7 @@ const MARKUP = `
           <span style="font-size:16px;font-weight:600;color:#c8c8c2;letter-spacing:.5px">Enoki</span>
         </div>
 
-        <div style="width:1px;height:32px;background:rgba(255,255,255,.08)"></div>
+        <div class="pbrand-sep" style="width:1px;height:32px;background:rgba(255,255,255,.08)"></div>
 
         <!-- Pyth — official "P" letterform from pyth-network/pyth-crosschain PythLogo.tsx -->
         <div class="pbrand" style="display:flex;align-items:center;gap:12px">
@@ -372,7 +419,7 @@ const MARKUP = `
     <div style="position:relative;max-width:1280px;margin:0 auto;background:linear-gradient(180deg,#101106,#0c0d07);border:1px solid rgba(255,255,255,.07);border-radius:30px;padding:60px 52px 34px;overflow:hidden">
       <svg width="320" height="320" viewBox="0 0 100 100" fill="none" style="position:absolute;top:-90px;right:-70px;opacity:.045;pointer-events:none;animation:drift 20s ease-in-out infinite"><circle cx="50" cy="50" r="37" stroke="#d4f56b" stroke-width="1.6"/><line x1="50" y1="6" x2="50" y2="94" stroke="#d4f56b" stroke-width="1.6"/><line x1="6" y1="50" x2="94" y2="50" stroke="#d4f56b" stroke-width="1.6"/></svg>
 
-      <div style="position:relative;display:grid;grid-template-columns:280px 1fr;gap:56px;align-items:stretch">
+      <div class="footer-grid" style="position:relative;display:grid;grid-template-columns:280px 1fr;gap:56px;align-items:stretch">
         <div style="display:flex;flex-direction:column;justify-content:space-between;gap:40px;min-width:0">
           <div>
             <div style="width:58px;height:58px;border-radius:14px;background:#d4f56b;display:flex;align-items:center;justify-content:center;box-shadow:0 14px 34px rgba(212,245,107,.22);margin-bottom:20px">
@@ -387,7 +434,7 @@ const MARKUP = `
         </div>
 
         <div style="min-width:0">
-          <div style="background:rgba(212,245,107,.035);border:1px solid rgba(255,255,255,.06);border-radius:22px;padding:34px 36px 28px;margin-bottom:56px">
+          <div class="footer-nl" style="background:rgba(212,245,107,.035);border:1px solid rgba(255,255,255,.06);border-radius:22px;padding:34px 36px 28px;margin-bottom:56px">
             <div class="fnl" style="padding-bottom:16px">
               <input class="email-in" type="email" placeholder="Enter your email" style="width:100%;background:transparent;border:none;outline:none;color:#f4f4ef;font-family:'Space Grotesk',sans-serif;font-weight:500;font-size:clamp(32px,3.9vw,54px);letter-spacing:-1.6px;line-height:1.05;padding:0">
             </div>
@@ -397,7 +444,7 @@ const MARKUP = `
             </div>
           </div>
 
-          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:32px">
+          <div class="footer-links" style="display:grid;grid-template-columns:repeat(4,1fr);gap:32px">
             <div>
               <div style="font-family:'Pixelify Sans',sans-serif;font-size:11px;letter-spacing:2px;color:#5a5a58;margin-bottom:18px">PRODUCT</div>
               <div style="display:flex;flex-direction:column;gap:13px;font-size:13px;color:#9a9a96">
