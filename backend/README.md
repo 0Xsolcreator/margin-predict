@@ -1,66 +1,71 @@
 # backend
 
-User-facing API for margin-predict. Server-custodial: the frontend does Google
-sign-in for UX only; this server holds the zkLogin key, builds the ZK proof, and
-**sponsors + signs + executes** every transaction. On-chain user moves
-(`request_open` / `request_close` / `cancel_intent`) are signed here; the actual
-borrow/swap/deploy/unwind is delegated to the [keeper](../keeper) service.
+User-facing API for Strike. Built with Bun + Fastify.
+
+The backend is **server-custodial** — it holds the zkLogin ephemeral key, builds the ZK proof, and sponsors every transaction via [Enoki](https://enoki.mystenlabs.com). Users sign in with Google and never touch a wallet or pay gas. On-chain intents (`request_open` / `request_close` / `cancel_intent`) are signed here; the actual borrow/swap/deploy/unwind is delegated to the [keeper](../keeper).
+
+---
+
+## Getting started
 
 ```bash
 bun install
-bun run index.ts        # listens on PORT (default 3000)
+cp .env.example .env   # fill in required vars
+bun run index.ts       # listens on PORT (default 3000)
 bun test
 ```
 
-## Environment (`backend/.env`)
+---
 
-| Var | Required | Default | Notes |
-|-----|----------|---------|-------|
-| `ENOKI_SECRET_KEY` | yes | — | Enoki private key (custody + sponsorship) |
-| `MARGIN_PREDICT_PACKAGE` | yes | — | published `margin_predict` package id |
-| `PREDICT_MANAGER_ID` | yes | — | PredictManager shared object (matches keeper) |
-| `KEEPER_URL` | no | `http://localhost:4000` | keeper service base URL |
-| `NETWORK` | no | `testnet` | `mainnet` \| `testnet` \| `devnet` |
+## Environment
+
+| Variable | Required | Default | Description |
+|---|---|---|---|
+| `ENOKI_SECRET_KEY` | yes | — | Enoki API key — custody + gas sponsorship |
+| `MARGIN_PREDICT_PACKAGE` | yes | — | Published `margin_predict` package id |
+| `PREDICT_MANAGER_ID` | yes | — | `PredictManager` shared object id |
+| `KEEPER_URL` | no | `http://localhost:4000` | Keeper service base URL |
+| `NETWORK` | no | `testnet` | `mainnet` · `testnet` · `devnet` |
 | `SUI_RPC_URL` | no | fullnode for `NETWORK` | gRPC endpoint |
-| `PORT` | no | `3000` | |
-| `ADDITIONAL_EPOCHS` | no | `2` | session/proof lifetime (~24h/epoch) |
-| `SPONSOR_ALLOWED_TARGETS` | no | (unrestricted) | comma-separated allowed move-call targets |
-| `PREDICT_PACKAGE` / `DUSDC_TYPE` / `PREDICT_ID` / `PREDICT_INDEXER` | no | testnet values | protocol overrides |
+| `PORT` | no | `3000` | HTTP listen port |
+| `ADDITIONAL_EPOCHS` | no | `2` | Session lifetime (~24h per epoch) |
+
+---
 
 ## Auth
 
-Authenticated routes take `Authorization: Bearer <sessionToken>`. Errors return
-`{ "error": string }` — `401` for an invalid/expired session, `502` for Enoki or
-move-abort failures, `500` otherwise.
-
-Sign-in is a two-step nonce handshake (the backend mints the ephemeral key, so
-Google sign-in must bind its nonce to it):
+Sign-in is a two-step nonce handshake. The backend mints the ephemeral key, so Google sign-in must bind its nonce to it:
 
 ```
-POST /auth/start                  -> { state, nonce }
-  frontend runs Google sign-in with `nonce`  -> id_token (JWT)
-POST /auth/finish { state, jwt }  -> { sessionToken, address }
+POST /auth/start                        → { state, nonce }
+  (frontend runs Google sign-in with `nonce`)
+POST /auth/finish  { state, jwt }       → { sessionToken, address }
 ```
+
+All authenticated routes require `Authorization: Bearer <sessionToken>`.
+
+Errors return `{ "error": string }` with status `401` (invalid session), `502` (Enoki or move-abort), or `500`.
+
+---
 
 ## Endpoints
 
-| Method | Path | Auth | Purpose |
-|--------|------|------|---------|
-| POST | `/auth/start` | — | begin login, get a zkLogin nonce |
-| POST | `/auth/finish` | — | exchange Google JWT for a session |
-| GET | `/stats` | ✓ | wallet balances |
-| POST | `/tx` | ✓ | sponsor+sign+execute a client-built tx kind |
-| POST | `/positions` | ✓ | place bet (open a leveraged position) |
-| GET | `/positions` | ✓ | list the caller's positions |
-| GET | `/positions/:id` | ✓ | position detail (+ health) |
-| POST | `/positions/:id/close` | ✓ | close a position |
-| POST | `/positions/:id/withdraw` | ✓ | claw back escrow / cancel a pending intent |
-| GET | `/oracles` | — | list markets |
-| GET | `/oracles/:id` | — | market detail |
+| Method | Path | Auth | Description |
+|---|---|---|---|
+| POST | `/auth/start` | — | Begin login, mint a zkLogin nonce |
+| POST | `/auth/finish` | — | Exchange Google JWT for a session token |
+| GET | `/stats` | ✓ | Wallet balances for the session address |
+| POST | `/tx` | ✓ | Sponsor + sign + execute a client-built transaction |
+| POST | `/positions` | ✓ | Open a leveraged position |
+| GET | `/positions` | ✓ | List the caller's positions |
+| GET | `/positions/:id` | ✓ | Position detail (+ live health factor) |
+| POST | `/positions/:id/close` | ✓ | Close a position |
+| POST | `/positions/:id/withdraw` | ✓ | Cancel a pending intent / claw back escrow |
+| GET | `/oracles` | — | List active prediction markets |
+| GET | `/oracles/:id` | — | Single oracle state + latest price |
 
 ### POST /auth/start
 
-Response:
 ```json
 { "state": "hex", "nonce": "string" }
 ```
@@ -78,7 +83,6 @@ Response:
 
 ### GET /stats
 
-Response:
 ```json
 {
   "address": "0x…",
@@ -96,22 +100,24 @@ Escape hatch for client-built transactions. Request:
 ```
 Response: `{ "digest": "0x…" }`
 
-### POST /positions — place bet
+### POST /positions — open a position
 
-Escrows the user's SUI via `request_open`, extracts the created `MarginPosition`,
-then calls the keeper to borrow/swap/deploy.
+Escrows the user's SUI via `request_open`, then calls the keeper to borrow/swap/deploy.
 
 Request:
 ```json
 {
   "oracleId": "0x…",
-  "expiry": "1750000000000",      // ms; string or number
-  "strike": "1000000",            // Predict units (6dp); string or number
-  "isUp": true,                   // optional, default true
-  "collateralSui": 1.0,           // human SUI
-  "leverageBps": 12000            // 11000=1.10x … 14000=1.40x
+  "expiry": "1750000000000",
+  "strike": "1000000",
+  "isUp": true,
+  "collateralSui": 1.0,
+  "leverageBps": 12000
 }
 ```
+
+`leverageBps` range: `11000` (1.10×) → `14000` (1.40×). `400` if `oracleId` / `collateralSui` / `leverageBps` is missing.
+
 Response:
 ```json
 {
@@ -128,13 +134,9 @@ Response:
   }
 }
 ```
-`400` if `oracleId` / `collateralSui` / `leverageBps` is missing. The `open`
-object is the keeper's response (`422` from the keeper bubbles up, e.g. borrow
-below the pool minimum).
 
 ### GET /positions
 
-The caller's tracked positions (keeper records filtered to `owner == address`):
 ```json
 [
   {
@@ -147,13 +149,13 @@ The caller's tracked positions (keeper records filtered to `owner == address`):
   }
 ]
 ```
-`status` ∈ `PENDING_OPEN | OPEN | CLOSED | LIQUIDATED | CANCELLED`. Amounts are
-raw (`marginDebt` 6dp DBUSDC, `collateralSui` 9dp).
+
+`status` ∈ `PENDING_OPEN | OPEN | CLOSED | LIQUIDATED | CANCELLED`. Amounts are raw (`marginDebt` 6dp dBUSDC, `collateralSui` 9dp SUI).
 
 ### GET /positions/:id
 
-Query: `oracleId` (optional). When the position is `OPEN` and `oracleId` is
-given, the live health factor is merged in:
+Pass `?oracleId=0x…` to merge in the live health factor:
+
 ```json
 {
   "positionId": "0x…",
@@ -165,12 +167,12 @@ given, the live health factor is merged in:
   "healthFactorBps": "10750"
 }
 ```
-`healthFactorBps`: `10000` = 1.00x; `≤10500` soft- and `≤10000` hard-liquidation
-zones; `18446744073709551615` = no debt. `404` if the keeper isn't tracking the id.
+
+`healthFactorBps`: `10000` = 1.00× (hard liquidation), `10500` = soft liquidation zone, `18446744073709551615` = no debt. `404` if the keeper isn't tracking the id.
 
 ### POST /positions/:id/close
 
-Records the close intent via `request_close`, then has the keeper unwind. Request:
+Request:
 ```json
 { "oracleId": "0x…" }
 ```
@@ -188,21 +190,21 @@ Response:
   }
 }
 ```
+
 `400` if `oracleId` is missing.
 
 ### POST /positions/:id/withdraw
 
-`cancel_intent` — claws back escrowed SUI from a stuck `PENDING_OPEN`, or cancels
-a pending close (leaves the position `OPEN`). No body. On-chain enforces the 120s
-timeout, so this **aborts (`502`)** if the intent is younger than 120s.
+Calls `cancel_intent` — claws back escrowed SUI from a stuck `PENDING_OPEN`, or cancels a pending close. No request body. Aborts with `502` if the intent is younger than 120s (on-chain enforced).
+
 ```json
 { "positionId": "0x…", "digest": "0x…" }
 ```
 
 ### GET /oracles
 
-Markets from the Predict indexer, soonest expiry first. Query `all=1` returns
-every status (default: active only).
+Markets from the Predict indexer, soonest expiry first. Pass `?all=1` to include non-active markets.
+
 ```json
 [
   {
@@ -219,19 +221,24 @@ every status (default: active only).
 
 ### GET /oracles/:id
 
-Single oracle state (passthrough from the indexer):
 ```json
 {
-  "oracle": { "oracle_id": "0x…", "status": "active", "expiry": 1750000000000, "...": "..." },
+  "oracle": { "oracle_id": "0x…", "status": "active", "expiry": 1750000000000 },
   "latest_price": { "spot": 1000000000, "forward": 1000000000, "onchain_timestamp": 0 }
 }
 ```
-`min_strike` / `tick_size` / `spot` / `forward` are 1e9 fixed-point USD; `expiry`
-is a ms UTC timestamp.
+
+`min_strike` / `tick_size` / `spot` / `forward` are 1e9 fixed-point USD. `expiry` is a ms UTC timestamp.
+
+---
 
 ## Files
 
-- `index.ts` — clients, session store, auth routes, `runTx` (the custodial signer), wiring
-- `protocol.ts` — constants, `request_open` / `request_close` / `cancel_intent` builders, keeper proxy
-- `positions.ts` — position lifecycle routes
-- `oracles.ts` — oracle indexer proxy
+| File | Description |
+|---|---|
+| `index.ts` | Server entry — Enoki client, session store, auth routes, custodial signer |
+| `protocol.ts` | Move call builders (`request_open`, `request_close`, `cancel_intent`) + keeper proxy |
+| `positions.ts` | Position lifecycle routes |
+| `oracles.ts` | Oracle indexer proxy |
+| `probabilities.ts` | Probability / pricing helpers |
+| `recover.ts` | Recovery routes for stuck positions |
